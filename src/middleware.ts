@@ -24,7 +24,7 @@ const PROTECTED_ROUTES = [
 // Auth routes (redirect to vault if already logged in)
 const AUTH_ROUTES = ["/login", "/register"];
 
-export async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Build response early so we can add headers

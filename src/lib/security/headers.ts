@@ -49,14 +49,13 @@ function buildCSP(): string {
     "default-src": ["'self'"],
     "script-src": [
       "'self'",
-      // Next.js requires unsafe-inline for dev hot reload
-      isDev ? "'unsafe-inline'" : "",
+      "'unsafe-inline'", // Required for Next.js hydration & theme script
       isDev ? "'unsafe-eval'" : "",
       "https://fonts.googleapis.com",
     ].filter(Boolean),
     "style-src": [
       "'self'",
-      "'unsafe-inline'", // Required for Tailwind CSS-in-JS
+      "'unsafe-inline'", // Required for Tailwind & Framer Motion
       "https://fonts.googleapis.com",
     ],
     "font-src": ["'self'", "https://fonts.gstatic.com"],
