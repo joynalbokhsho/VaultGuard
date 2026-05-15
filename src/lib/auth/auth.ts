@@ -180,7 +180,7 @@ export const auth = betterAuth({
       },
       email: {
         enabled: true,
-        sendVerificationCode: async ({ user, code }: { user: any; code: string }) => {
+        sendOtp: async ({ user, code }: { user: any; code: string }) => {
           if (user.twoFactorEmailEnabled === false) {
             console.log("[Auth] Email 2FA skipped: disabled for user", user.email);
             return;
