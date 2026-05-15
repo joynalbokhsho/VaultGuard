@@ -73,7 +73,7 @@ function emailTemplate(title: string, bodyHtml: string) {
     </tr>
   </table>
 </body>
-</html>\`;
+</html>`;
 }
 
 // ─── Helper to safely send and log errors ────────────────────────────────────
@@ -89,7 +89,7 @@ async function sendEmail({
   const result = await resend.emails.send({ from: FROM, to, subject, html });
   if (result.error) {
     console.error("[Resend] Failed to send email:", result.error);
-    throw new Error(\`Email delivery failed: \${result.error.message}\`);
+    throw new Error(`Email delivery failed: ${result.error.message}`);
   }
   console.log("[Resend] Email sent to", to, "| id:", result.data?.id);
 }
@@ -109,14 +109,14 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: \`Reset your \${APP_NAME} password\`,
+        subject: `Reset your ${APP_NAME} password`,
         html: emailTemplate(
           "Reset your password",
-            \`<p style="margin:0 0 24px;">We received a request to reset your \${APP_NAME} account password. Click the button below to secure your vault with a new passphrase.</p>
+          `<p style="margin:0 0 24px;">We received a request to reset your ${APP_NAME} account password. Click the button below to secure your vault with a new passphrase.</p>
              <div style="text-align:center;margin:32px 0;">
-               <a href="\${url}" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);color:#ffffff;font-weight:700;font-size:15px;border-radius:12px;text-decoration:none;box-shadow:0 10px 20px rgba(79, 70, 229, 0.2);">Reset Your Password</a>
+               <a href="${url}" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);color:#ffffff;font-weight:700;font-size:15px;border-radius:12px;text-decoration:none;box-shadow:0 10px 20px rgba(79, 70, 229, 0.2);">Reset Your Password</a>
              </div>
-             <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this, you can safely ignore this email. The link will expire in 1 hour.</p>\`
+             <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this, you can safely ignore this email. The link will expire in 1 hour.</p>`
         ),
       });
     },
@@ -127,14 +127,14 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: \`Verify your \${APP_NAME} email address\`,
+        subject: `Verify your ${APP_NAME} email address`,
         html: emailTemplate(
           "Verify your email",
-            \`<p style="margin:0 0 24px;">Thank you for choosing VaultGuard. To finish setting up your account and activate your encrypted storage, please verify your email address below.</p>
+          `<p style="margin:0 0 24px;">Thank you for choosing VaultGuard. To finish setting up your account and activate your encrypted storage, please verify your email address below.</p>
              <div style="text-align:center;margin:32px 0;">
-               <a href="\${url}" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);color:#ffffff;font-weight:700;font-size:15px;border-radius:12px;text-decoration:none;box-shadow:0 10px 20px rgba(79, 70, 229, 0.2);">Verify Email Address</a>
+               <a href="${url}" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);color:#ffffff;font-weight:700;font-size:15px;border-radius:12px;text-decoration:none;box-shadow:0 10px 20px rgba(79, 70, 229, 0.2);">Verify Email Address</a>
              </div>
-             <p style="margin:0;font-size:13px;color:#475569;">If you did not create a \${APP_NAME} account, you can safely ignore this email.</p>\`
+             <p style="margin:0;font-size:13px;color:#475569;">If you did not create a ${APP_NAME} account, you can safely ignore this email.</p>`
         ),
       });
     },
@@ -173,21 +173,25 @@ export const auth = betterAuth({
   // --- Plugins ---
   plugins: [
     emailOTP({
-      async sendVerificationCode({ user, code }) {
-        if ((user as any).twoFactorEmailEnabled === false) {
-          console.log("[Auth] Email 2FA skipped: disabled for user", user.email);
+      async sendVerificationOTP({ email, otp: code }) {
+        const user = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (!user || user.twoFactorEmailEnabled === false) {
+          console.log("[Auth] Email 2FA skipped: user not found or disabled for", email);
           return;
         }
         await sendEmail({
           to: user.email,
-          subject: \`Your \${APP_NAME} 2FA Code\`,
+          subject: `Your ${APP_NAME} 2FA Code`,
           html: emailTemplate(
             "Two-Factor Authentication",
-            \`<p style="margin:0 0 24px;">Use the verification code below to complete your sign-in. For your security, this code will expire in 10 minutes.</p>
+            `<p style="margin:0 0 24px;">Use the verification code below to complete your sign-in. For your security, this code will expire in 10 minutes.</p>
              <div style="text-align:center;margin:40px 0;">
-               <div style="display:inline-block;padding:20px 48px;background-color:#020205;border:2px solid #4f46e5;color:#ffffff;font-size:36px;font-weight:800;letter-spacing:10px;border-radius:16px;box-shadow:0 0 30px rgba(79, 70, 229, 0.1);">\${code}</div>
+               <div style="display:inline-block;padding:20px 48px;background-color:#020205;border:2px solid #4f46e5;color:#ffffff;font-size:36px;font-weight:800;letter-spacing:10px;border-radius:16px;box-shadow:0 0 30px rgba(79, 70, 229, 0.1);">${code}</div>
              </div>
-             <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this code, please secure your account by changing your login password immediately.</p>\`
+             <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this code, please secure your account by changing your login password immediately.</p>`
           ),
         });
       },
