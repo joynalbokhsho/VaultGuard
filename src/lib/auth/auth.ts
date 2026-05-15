@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { twoFactor } from "better-auth/plugins";
+import { twoFactor, emailOtp } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import { prisma } from "@/lib/db/prisma";
 import { Resend } from "resend";
@@ -172,32 +172,31 @@ export const auth = betterAuth({
 
   // --- Plugins ---
   plugins: [
+    emailOtp({
+      async sendVerificationCode({ user, code }) {
+        if ((user as any).twoFactorEmailEnabled === false) {
+          console.log("[Auth] Email 2FA skipped: disabled for user", user.email);
+          return;
+        }
+        await sendEmail({
+          to: user.email,
+          subject: `Your ${APP_NAME} 2FA Code`,
+          html: emailTemplate(
+            "Two-Factor Authentication",
+            `<p style="margin:0 0 24px;">Use the verification code below to complete your sign-in. For your security, this code will expire in 10 minutes.</p>
+             <div style="text-align:center;margin:40px 0;">
+               <div style="display:inline-block;padding:20px 48px;background-color:#020205;border:2px solid #4f46e5;color:#ffffff;font-size:36px;font-weight:800;letter-spacing:10px;border-radius:16px;box-shadow:0 0 30px rgba(79, 70, 229, 0.1);">${code}</div>
+             </div>
+             <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this code, please secure your account by changing your login password immediately.</p>`
+          ),
+        });
+      },
+    }),
     twoFactor({
       issuer: APP_NAME,
       otpOptions: {
         period: 30,
         digits: 6,
-      },
-      email: {
-        enabled: true,
-        sendOtp: async ({ user, code }: { user: any; code: string }) => {
-          if (user.twoFactorEmailEnabled === false) {
-            console.log("[Auth] Email 2FA skipped: disabled for user", user.email);
-            return;
-          }
-          await sendEmail({
-            to: user.email,
-            subject: `Your ${APP_NAME} 2FA Code`,
-            html: emailTemplate(
-              "Two-Factor Authentication",
-              `<p style="margin:0 0 24px;">Use the verification code below to complete your sign-in. For your security, this code will expire in 10 minutes.</p>
-               <div style="text-align:center;margin:40px 0;">
-                 <div style="display:inline-block;padding:20px 48px;background-color:#020205;border:2px solid #4f46e5;color:#ffffff;font-size:36px;font-weight:800;letter-spacing:10px;border-radius:16px;box-shadow:0 0 30px rgba(79, 70, 229, 0.1);">${code}</div>
-               </div>
-               <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this code, please secure your account by changing your login password immediately.</p>`
-            ),
-          });
-        },
       },
     }),
     passkey({
