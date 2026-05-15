@@ -5,6 +5,9 @@ import { passkeyClient } from "@better-auth/passkey/client";
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   plugins: [twoFactorClient(), passkeyClient()],
+  advanced: {
+    cookiePrefix: "vaultguard",
+  },
 });
 
 export const {

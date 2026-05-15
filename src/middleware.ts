@@ -33,10 +33,12 @@ export async function middleware(req: NextRequest) {
   // Apply security headers to ALL responses
   response = applySecurityHeaders(response);
 
-  // Check session cookie
+  // Check session cookie (including secure production variants)
   const sessionCookie =
     req.cookies.get("vaultguard.session_token") ??
-    req.cookies.get("better-auth.session_token");
+    req.cookies.get("__Secure-vaultguard.session_token") ??
+    req.cookies.get("better-auth.session_token") ??
+    req.cookies.get("__Secure-better-auth.session_token");
 
   const isAuthenticated = !!sessionCookie?.value;
 
