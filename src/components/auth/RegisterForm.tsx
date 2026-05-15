@@ -77,8 +77,7 @@ export function RegisterForm() {
       if (!vaultRes.ok) throw new Error("Failed to create vault");
 
       toast.success("Account created! Your vault is ready.");
-      router.push("/vault");
-      router.refresh();
+      window.location.href = "/vault";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

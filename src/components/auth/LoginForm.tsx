@@ -49,8 +49,7 @@ export function LoginForm() {
       }
 
       toast.success("Welcome back!");
-      router.push("/vault");
-      router.refresh();
+      window.location.href = "/vault";
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -73,8 +72,7 @@ export function LoginForm() {
         return;
       }
       toast.success("Welcome back!");
-      router.push("/vault");
-      router.refresh();
+      window.location.href = "/vault";
     } catch {
       setError("Verification failed. Please try again.");
     } finally {
