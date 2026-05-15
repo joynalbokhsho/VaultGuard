@@ -45,29 +45,79 @@ The server stores only ciphertext. Even with full database access, an attacker c
 
 ---
 
+## How It Works
+
+### End-to-End Encryption Overview
+
+```mermaid
+flowchart TD
+    A(["👤 User"]) -->|"Types Master Password"| B["Browser"]
+    B -->|"+ KDF Salt from server"| C["PBKDF2-SHA512\n600,000 iterations"]
+    C -->|"Derives"| D(["🔑 Master Key\nCryptoKey — memory only"])
+    D --> E{"Action"}
+    E -->|"Save entry"| F["AES-256-GCM Encrypt\nwith random IV"]
+    E -->|"Read entry"| G["AES-256-GCM Decrypt\nlocally in browser"]
+    F -->|"Ciphertext + IV"| H[("☁️ Server / DB\nstores only ciphertext")]
+    H -->|"Encrypted blob"| G
+    G -->|"Plaintext"| I(["🖥️ Displayed to user"])
+
+    style D fill:#7c3aed,color:#fff
+    style H fill:#1e1e2e,color:#9c99bc
+    style C fill:#1a1a2e,color:#a78bfa
+```
+
+### Vault Write Flow (Saving a Password)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant B as Browser
+    participant S as Server
+    participant DB as Database
+
+    U->>B: Enters password entry
+    B->>B: Generate random IV (12 bytes)
+    B->>B: AES-256-GCM encrypt with Master Key
+    B->>S: POST /api/entries { encryptedData, iv, type }
+    S->>S: Auth check (session cookie)
+    S->>DB: INSERT EncryptedEntry
+    DB-->>S: Entry ID
+    S-->>B: 201 Created { id }
+    B-->>U: Entry saved ✓
+
+    Note over B: Master Key never leaves the browser
+    Note over S,DB: Server only ever sees ciphertext
+```
+
+### Vault Read Flow (Unlocking)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant B as Browser
+    participant S as Server
+    participant DB as Database
+
+    U->>B: Enters Master Password
+    B->>S: GET /api/vault (fetch KDF salt)
+    S->>DB: SELECT kdfSalt WHERE userId
+    DB-->>S: kdfSalt
+    S-->>B: { kdfSalt }
+    B->>B: PBKDF2-SHA512(masterPassword, kdfSalt)
+    B->>B: Master Key derived in memory
+    B->>S: GET /api/entries
+    S->>DB: SELECT * FROM EncryptedEntry
+    DB-->>S: Encrypted blobs
+    S-->>B: [ { encryptedData, iv } ]
+    B->>B: AES-256-GCM decrypt each entry
+    B-->>U: Vault unlocked — entries displayed
+
+    Note over B: Decryption is 100% client-side
+```
+
+---
+
 ## Security Architecture
-
-### Zero-Knowledge Encryption Flow
-
-```
-User types Master Password
-         │
-         ▼
-PBKDF2-SHA512 (600,000 iterations)  ←── KDF Salt (stored on server)
-         │
-         ▼
-    Master Key (CryptoKey)  ←── Never leaves the browser. Lives only in JS heap memory.
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-Encrypt    Decrypt
-Entries    Entries
-(AES-256-GCM)
-    │
-    ▼
-Ciphertext + IV  ──► Sent to server / stored in DB
-```
 
 ### Key Security Properties
 
@@ -432,53 +482,79 @@ VaultGuard uses **two separate passwords** for different purposes:
 
 This means even if your account is compromised, the attacker still cannot read your vault without your master password.
 
+### Authentication Flow
+
+```mermaid
+flowchart TD
+    A(["👤 User visits /login"]) --> B["Enter email + Login Password"]
+    B --> C{"Has 2FA enabled?"}
+    C -->|"No"| D["Session created\nHttpOnly cookie set"]
+    C -->|"Yes"| E["Enter 6-digit TOTP code"]
+    E --> F{"Code valid?"}
+    F -->|"No"| G["❌ Error — retry"]
+    F -->|"Yes"| D
+    D --> H["Redirect to /vault"]
+    H --> I["Enter Master Password"]
+    I --> J["Browser derives Master Key\nvia PBKDF2-SHA512"]
+    J --> K["Fetch encrypted entries from API"]
+    K --> L["Decrypt entries client-side"]
+    L --> M(["✅ Vault unlocked"])
+
+    style M fill:#10b981,color:#fff
+    style G fill:#ef4444,color:#fff
+    style J fill:#7c3aed,color:#fff
+```
+
 ---
 
 ## Cryptography Deep Dive
 
 ### Key Derivation (`src/lib/crypto/keyDerivation.ts`)
 
-```
-Master Password (string)
-        +
-KDF Salt (32 random bytes, stored on server as Base64)
-        │
-        ▼
-PBKDF2-SHA512
-  iterations: 600,000
-  keyLength:  256 bits
-        │
-        ▼
-Master Key (CryptoKey, non-extractable)
+```mermaid
+flowchart LR
+    A(["Master Password\nstring"]) --> C
+    B(["KDF Salt\n32 random bytes\nstored in DB"]) --> C
+    C["PBKDF2-SHA512\niterations: 600,000\nkeyLength: 256 bits"] --> D(["Master Key\nCryptoKey\nnon-extractable"])
+
+    style D fill:#7c3aed,color:#fff
+    style C fill:#1a1a2e,color:#a78bfa
 ```
 
-The KDF salt is generated once on registration and stored in the `User.kdfSalt` column. It is **not secret** — it just prevents rainbow table attacks.
+The KDF salt is generated once on registration and stored in the `User.kdfSalt` column. It is **not secret** — it prevents rainbow table attacks and ensures two users with the same master password get different keys.
 
 ### Entry Encryption (`src/lib/crypto/encryption.ts`)
 
-```
-Plaintext Entry (JSON string)
-        +
-Master Key (CryptoKey)
-        +
-IV (12 random bytes, unique per entry)
-        │
-        ▼
-AES-256-GCM encrypt (crypto.subtle.encrypt)
-        │
-        ▼
-{ encryptedData: Base64, iv: Base64 }  ──► stored in DB
+```mermaid
+flowchart LR
+    A(["Plaintext Entry\nJSON string"]) --> D
+    B(["Master Key\nCryptoKey"]) --> D
+    C(["IV\n12 random bytes\nunique per entry"]) --> D
+    D["AES-256-GCM\ncrypto.subtle.encrypt"] --> E(["encryptedData + IV\nBase64 → stored in DB"])
+
+    style B fill:#7c3aed,color:#fff
+    style D fill:#1a1a2e,color:#a78bfa
+    style E fill:#1e1e2e,color:#9c99bc
 ```
 
-Each entry gets its own randomly generated IV. The GCM authentication tag (included in the output) guarantees both confidentiality and integrity — tampered ciphertext will fail to decrypt.
+Each entry gets its own randomly generated IV. The GCM authentication tag guarantees both confidentiality and integrity — tampered ciphertext will fail to decrypt.
 
-### Master Key in Memory
+### Master Key Lifecycle
 
-The derived `CryptoKey` is stored in a Zustand store **without persistence**:
-- It exists only in the JavaScript heap
-- It is **non-extractable** — you cannot call `crypto.subtle.exportKey` on it
-- It is cleared on vault lock, logout, session expiry, or browser refresh
-- The inactivity timer hook wipes it after 15 minutes of no user interaction
+```mermaid
+stateDiagram-v2
+    [*] --> Locked: App loads / page refresh
+    Locked --> Deriving: User enters Master Password
+    Deriving --> Unlocked: PBKDF2 succeeds
+    Deriving --> Locked: Wrong password
+    Unlocked --> Locked: User clicks Lock
+    Unlocked --> Locked: 15 min inactivity
+    Unlocked --> Locked: Browser tab closed
+    Unlocked --> Locked: Logout
+    Locked --> [*]
+
+    note right of Unlocked: Master Key lives in\nZustand memory only\n(non-extractable CryptoKey)
+```
 
 ---
 
