@@ -167,6 +167,33 @@ export const auth = betterAuth({
         period: 30,
         digits: 6,
       },
+      email: {
+        enabled: true,
+        sendVerificationCode: async ({ user, code }) => {
+          if (!(user as any).twoFactorEmailEnabled) {
+            console.log("[Auth] Email 2FA skipped: disabled for user", user.email);
+            return;
+          }
+          await sendEmail({
+            to: user.email,
+            subject: `Your ${APP_NAME} 2FA Code`,
+            html: emailTemplate(
+              "Two-Factor Authentication",
+              `<p style="color:#9c99bc;font-size:15px;line-height:1.7;margin:0 0 24px;">
+                Use the code below to verify your identity. This code will expire in 10 minutes.
+               </p>
+               <div style="text-align:center;margin:32px 0;">
+                 <div style="display:inline-block;padding:16px 40px;background:#111120;border:2px solid #7c3aed;color:#7c3aed;font-size:32px;font-weight:800;letter-spacing:8px;border-radius:12px;">
+                   ${code}
+                 </div>
+               </div>
+               <p style="color:#4b4b6b;font-size:12px;margin:0;">
+                 If you did not request this code, someone might be trying to access your account. Please change your password immediately.
+               </p>`
+            ),
+          });
+        },
+      },
     }),
     passkey(),
   ],

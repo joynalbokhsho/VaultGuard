@@ -169,10 +169,27 @@ export function LoginForm() {
                 animate={{ opacity: 1, x: 0 }} 
                 className="space-y-4"
               >
-                <div className="text-center">
+                <div className="text-center space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Enter the 6-digit code from your authenticator app.
+                    Enter the 6-digit code from your authenticator app or email.
                   </p>
+                  <Button 
+                    type="button"
+                    variant="link" 
+                    size="sm"
+                    className="text-xs h-auto p-0 font-bold text-primary hover:text-primary/80"
+                    onClick={async () => {
+                      try {
+                        const result = await (authClient as any).twoFactor.sendVerificationCode();
+                        if (result.error) throw new Error(result.error.message);
+                        toast.success("Verification code sent to your email!");
+                      } catch (e: any) {
+                        toast.error(e.message || "Failed to send code. Please try again.");
+                      }
+                    }}
+                  >
+                    Send code to email instead
+                  </Button>
                 </div>
 
                 <div className="space-y-2">

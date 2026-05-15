@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Smartphone, CheckCircle, Copy, AlertCircle, Loader2, AlertTriangle, Key } from "lucide-react";
+import { Shield, Smartphone, CheckCircle, Copy, AlertCircle, Loader2, AlertTriangle, Key, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth/auth-client";
 import { useCopyWithClear } from "@/hooks/useCopyWithClear";
@@ -35,6 +35,24 @@ export default function TwoFactorPage() {
   const { copy } = useCopyWithClear();
 
   const is2FAEnabled = session?.user?.twoFactorEnabled ?? false;
+  const isEmailEnabled = (session?.user as any)?.twoFactorEmailEnabled ?? false;
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
+  const toggleEmail2FA = async () => {
+    setIsUpdatingEmail(true);
+    try {
+      const result = await authClient.updateUser({
+        // @ts-ignore
+        twoFactorEmailEnabled: !isEmailEnabled,
+      });
+      if (result.error) throw new Error(result.error.message);
+      toast.success(`Email 2FA ${!isEmailEnabled ? "enabled" : "disabled"}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update email 2FA preference");
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
 
   const startSetup = async (password: string) => {
     if (!password) {
@@ -254,6 +272,33 @@ export default function TwoFactorPage() {
               </>
             )}
           </AnimatePresence>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="pb-4 bg-muted/20 border-b border-border/30">
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-primary" />
+            <CardTitle className="text-lg">Email Verification</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">Receive codes via email</p>
+              <p className="text-xs text-muted-foreground">
+                Get a verification code in your inbox when signing in.
+              </p>
+            </div>
+            <Button
+              variant={isEmailEnabled ? "outline" : "default"}
+              size="sm"
+              disabled={isUpdatingEmail}
+              onClick={toggleEmail2FA}
+            >
+              {isUpdatingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : (isEmailEnabled ? "Disable" : "Enable")}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

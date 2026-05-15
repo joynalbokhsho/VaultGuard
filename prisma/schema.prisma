@@ -19,6 +19,7 @@ model User {
   
   // 2FA
   twoFactorEnabled Boolean  @default(false)
+  twoFactorEmailEnabled Boolean @default(false)
   
   // Vault key derivation hint (NOT the key itself)
   kdfSalt          String?  // Base64 — PBKDF2 salt for master password KDF
