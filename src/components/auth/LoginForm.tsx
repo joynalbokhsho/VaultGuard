@@ -23,6 +23,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [totpCode, setTotpCode] = useState("");
+  const [isEmailOtp, setIsEmailOtp] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -66,7 +67,9 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await (authClient as any).twoFactor.verifyTotp({ code: totpCode });
+      const result = isEmailOtp
+        ? await (authClient as any).twoFactor.verifyOtp({ code: totpCode })
+        : await (authClient as any).twoFactor.verifyTotp({ code: totpCode });
       if (result.error) {
         setError(result.error.message ?? "Invalid verification code");
         return;
@@ -180,10 +183,9 @@ export function LoginForm() {
                     className="text-xs h-auto p-0 font-bold text-primary hover:text-primary/80"
                     onClick={async () => {
                       try {
-                        const result = await (authClient as any).twoFactor.sendOtp({
-                          type: "email",
-                        });
+                        const result = await (authClient as any).twoFactor.sendOtp();
                         if (result.error) throw new Error(result.error.message);
+                        setIsEmailOtp(true);
                         toast.success("Verification code sent to your email!");
                       } catch (e: any) {
                         toast.error(e.message || "Failed to send code. Please try again.");
