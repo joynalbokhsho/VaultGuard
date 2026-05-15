@@ -156,7 +156,7 @@ export default function SettingsPage() {
               if (confirm("Sign out of all devices?")) {
                 await fetch("/api/sessions", { method: "DELETE" });
                 await signOut();
-                router.push("/login");
+                window.location.href = "/login";
               }
             }}
             className="w-full text-left p-4 hover:bg-destructive/10 transition-colors group"

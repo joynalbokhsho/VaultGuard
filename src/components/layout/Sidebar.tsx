@@ -33,7 +33,7 @@ export function Sidebar({ user }: SidebarProps) {
   const handleSignOut = async () => {
     lockVault();
     await signOut();
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   return (
