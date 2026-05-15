@@ -1,0 +1,196 @@
+// Zero-Knowledge Password Manager — Prisma Schema
+// IMPORTANT: Sensitive data is ALWAYS encrypted before DB storage
+// The server/DB only ever sees encrypted blobs + salts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  emailVerified    Boolean  @default(false)
+  name             String?
+  image            String?
+  
+  // 2FA
+  twoFactorEnabled Boolean  @default(false)
+  
+  // Vault key derivation hint (NOT the key itself)
+  kdfSalt          String?  // Base64 — PBKDF2 salt for master password KDF
+  
+  // User Role
+  role             String   @default("user")
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  vault            Vault?
+  auditLogs        AuditLog[]
+  recoveryCodes    RecoveryCode[]
+  devices          Device[]
+  
+  // Better Auth tables
+  sessions         Session[]
+  accounts         Account[]
+  twoFactors       TwoFactor[]
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId         String
+  providerId        String
+  accessToken       String? @db.Text
+  refreshToken      String? @db.Text
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope             String?
+  password          String?
+  idToken           String? @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([token])
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@index([identifier])
+}
+
+model TwoFactor {
+  id          String  @id @default(uuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secret      String  // Encrypted TOTP secret
+  backupCodes String  @db.Text // Encrypted JSON array of backup codes
+  verified    Boolean @default(true)
+  
+  @@index([userId])
+}
+
+// ZERO-KNOWLEDGE VAULT
+// encryptedData is an AES-256-GCM encrypted blob
+// The server NEVER sees plaintext vault contents
+model Vault {
+  id            String          @id @default(uuid())
+  userId        String          @unique
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Encrypted JSON blob containing vault metadata
+  // Only the owner with the master password can decrypt
+  encryptedData String          @db.Text
+  iv            String          // Base64 AES-GCM IV
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  entries       EncryptedEntry[]
+  
+  @@index([userId])
+}
+
+// Each vault entry is individually encrypted
+// type/tags/isFavorite are the ONLY unencrypted fields (non-sensitive metadata)
+model EncryptedEntry {
+  id            String   @id @default(uuid())
+  vaultId       String
+  vault         Vault    @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  
+  // Encrypted JSON blob — contains: title, username, password, url, notes, customFields, etc.
+  // NEVER stored in plaintext
+  encryptedData String   @db.Text
+  iv            String   // Base64 AES-GCM IV (unique per entry)
+  
+  // Non-sensitive metadata (safe to store unencrypted for filtering)
+  type          EntryType @default(CREDENTIAL)
+  isFavorite    Boolean  @default(false)
+  
+  // Encrypted search index (optional, for future search optimization)
+  encryptedSearchIndex String? @db.Text
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([vaultId])
+  @@index([type])
+}
+
+enum EntryType {
+  CREDENTIAL  // Website login
+  NOTE        // Secure note
+  CARD        // Bank/credit card
+  API_KEY     // API key
+  SSH_KEY     // SSH key pair
+  IDENTITY    // Personal identity info
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // e.g. "VAULT_UNLOCK", "ENTRY_CREATE", "LOGIN_SUCCESS"
+  ipAddress String?
+  userAgent String?
+  metadata  String?  @db.Text // JSON string (non-sensitive context only)
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RecoveryCode {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String   // Argon2id hash of recovery code
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+}
+
+model Device {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String   // e.g. "Chrome on Windows"
+  fingerprint String   // Browser fingerprint hash
+  trusted     Boolean  @default(false)
+  lastSeen    DateTime @default(now())
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@unique([userId, fingerprint])
+}

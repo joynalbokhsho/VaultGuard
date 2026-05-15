@@ -1,0 +1,12 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "DATABASE_URL": "@database-url",
+    "BETTER_AUTH_SECRET": "@better-auth-secret",
+    "BETTER_AUTH_URL": "@better-auth-url",
+    "NEXT_PUBLIC_APP_URL": "@next-public-app-url",
+    "RESEND_API_KEY": "@resend-api-key"
+  }
+}
