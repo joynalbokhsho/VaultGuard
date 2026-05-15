@@ -8,6 +8,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
 [![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma)](https://prisma.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/joynalbokhsho/VaultGuard?style=social)](https://github.com/joynalbokhsho/VaultGuard)
+[![GitHub Forks](https://img.shields.io/github/forks/joynalbokhsho/VaultGuard?style=social)](https://github.com/joynalbokhsho/VaultGuard/fork)
 
 *Your passwords are encrypted in your browser before they ever reach our servers — we literally cannot read them.*
 
@@ -212,7 +214,9 @@ vaultguard/
 │   │   ├── layout/           # Sidebar, DashboardNavbar
 │   │   └── vault/            # VaultDashboard, EntryList, PasswordModal, etc.
 │   ├── hooks/
-│   │   └── useInactivityTimer.ts  # Auto-lock countdown hook
+│   │   ├── useInactivityTimer.ts  # Live countdown — seconds left before auto-lock
+│   │   ├── useInactivityLock.ts   # Triggers vault.lockVault() on timer expiry
+│   │   └── useCopyWithClear.ts    # Copy to clipboard, auto-clears after N seconds
 │   ├── lib/
 │   │   ├── auth/             # Better Auth config (server + client)
 │   │   ├── crypto/
@@ -272,8 +276,8 @@ VaultGuard uses PostgreSQL. Here is a summary of the key models:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/vaultguard.git
-cd vaultguard
+git clone https://github.com/joynalbokhsho/VaultGuard.git
+cd VaultGuard
 ```
 
 ### 2. Install dependencies
@@ -305,7 +309,8 @@ npx prisma generate
 First register a normal account via the app, then run:
 
 ```bash
-node scripts/make-admin.mjs your@email.com
+node scripts/make-admin.mjs
+# You will be prompted to enter the email address
 ```
 
 ### 6. Run the development server
@@ -506,31 +511,44 @@ This script directly updates the `User.role` field in the database.
 4. Set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to your production domain
 5. Run database migrations: `npx prisma db push`
 
-### Self-Hosted (Docker / VPS)
+### Self-Hosted (Docker)
+
+A `docker-compose.yml` is included for running the app + PostgreSQL locally:
 
 ```bash
-# Build the production bundle
-npm run build
+# Copy and configure your environment
+cp .env.example .env
 
-# Start the server
+# Start services
+docker compose up -d
+```
+
+> ⚠️ **Set `POSTGRES_PASSWORD` in your `.env`** before running Docker in production. The default fallback `changeme` in `docker-compose.yml` is a placeholder only.
+
+### Self-Hosted (VPS / Node)
+
+```bash
+npm run build
 npm start
 ```
 
-Make sure your server has:
+Requirements:
 - Node.js 20+
 - A running PostgreSQL instance
-- All environment variables configured
+- All environment variables set in `.env`
 
 ### Production Checklist
 
-- [ ] `BETTER_AUTH_SECRET` is at least 32 random characters (`openssl rand -hex 32`)
-- [ ] `CSRF_SECRET` is set
-- [ ] `DATABASE_URL` points to your production database
-- [ ] `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` are set to your HTTPS domain
-- [ ] `RESEND_API_KEY` is configured for email delivery
-- [ ] Upstash Redis is configured for distributed rate limiting
-- [ ] HTTPS/TLS is enforced (required for WebAuthn / Passkeys)
-- [ ] Run `npx prisma db push` against your production database
+- [ ] `BETTER_AUTH_SECRET` is at least 32 random characters — generate: `openssl rand -hex 32`
+- [ ] `CSRF_SECRET` is set — generate: `openssl rand -hex 32`
+- [ ] `DATABASE_URL` points to your **production** database (not dev/local)
+- [ ] `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` are your HTTPS domain (no trailing slash)
+- [ ] `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are configured for email delivery
+- [ ] `POSTGRES_PASSWORD` is a strong, unique password (if using Docker)
+- [ ] Upstash Redis is configured for distributed rate limiting across instances
+- [ ] HTTPS / TLS is enforced — **required** for WebAuthn / Passkeys to function
+- [ ] Run `npx prisma db push` against your production database before first boot
+- [ ] Confirm `.env` is **not** in your git history (`git log --all -- .env`)
 
 ---
 
@@ -538,17 +556,25 @@ Make sure your server has:
 
 Contributions are very welcome! Here's how to get started:
 
-1. **Fork** the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes, ensuring the build passes: `npm run build`
-4. Commit with a clear message: `git commit -m "feat: add your feature"`
-5. Push and open a **Pull Request**
+1. **Fork** the repository on GitHub
+2. Clone your fork: `git clone https://github.com/your-username/VaultGuard.git`
+3. Create a feature branch: `git checkout -b feature/your-feature-name`
+4. Make your changes and ensure the build passes: `npm run build`
+5. Commit with a descriptive message: `git commit -m "feat: add your feature"`
+6. Push and open a **Pull Request** against `master`
 
 ### Guidelines
-- Follow the existing TypeScript and code style
-- Maintain the zero-knowledge guarantee — no plaintext secrets should ever leave the browser
-- Add comments to any cryptographic code
-- Test on both desktop and mobile viewports
+- Follow the existing TypeScript code style and naming conventions
+- **Maintain the zero-knowledge guarantee** — no plaintext secrets should ever leave the browser or be stored server-side
+- Add JSDoc comments to any cryptographic code
+- Test on both desktop and mobile screen sizes
+- Do not introduce new dependencies without discussion in the PR
+
+### Good First Issues
+- Improving accessibility (ARIA, keyboard navigation)
+- Adding more vault entry types
+- Improving the password generator wordlist
+- Writing integration tests
 
 ---
 
