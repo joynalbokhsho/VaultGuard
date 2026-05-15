@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Shield, ChevronRight, Key, Clock, Fingerprint, LogOut } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth/auth-client";
+import { useVaultStore } from "@/store/vaultStore";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 export default function SettingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { autoLockMinutes, setAutoLockMinutes } = useVaultStore();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -127,7 +129,13 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold">Auto-lock timeout</p>
               <p className="text-xs text-muted-foreground">Lock vault after period of inactivity</p>
             </div>
-            <Select defaultValue="15">
+            <Select
+              value={String(autoLockMinutes)}
+              onValueChange={(val) => {
+                setAutoLockMinutes(Number(val));
+                toast.success(`Auto-lock set to ${val === "60" ? "1 hour" : `${val} minutes`}`);
+              }}
+            >
               <SelectTrigger className="w-[140px] h-9 bg-muted/30">
                 <SelectValue placeholder="Select timeout" />
               </SelectTrigger>

@@ -6,7 +6,6 @@ import { useCallback, useState } from "react";
 import { useInactivityTimer, formatCountdown } from "@/hooks/useInactivityTimer";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface DashboardNavbarProps {
@@ -14,16 +13,17 @@ interface DashboardNavbarProps {
 }
 
 export function DashboardNavbar({ user }: DashboardNavbarProps) {
-  const { isUnlocked, isMobileSidebarOpen, setMobileSidebar, lockVault } = useVaultStore();
+  const { isUnlocked, isMobileSidebarOpen, setMobileSidebar, lockVault, autoLockMinutes } = useVaultStore();
   const [isDark, setIsDark] = useState(true);
 
   const handleExpire = useCallback(() => {
     lockVault();
   }, [lockVault]);
 
-  const { secondsLeft, isWarning } = useInactivityTimer({
+  const { secondsLeft, isWarning, isIdle } = useInactivityTimer({
     enabled: isUnlocked,
     onExpire: handleExpire,
+    timeoutSeconds: autoLockMinutes * 60,
   });
 
   const toggleTheme = () => {
@@ -32,13 +32,17 @@ export function DashboardNavbar({ user }: DashboardNavbarProps) {
     localStorage.setItem("vaultguard-theme", isDark ? "light" : "dark");
   };
 
-  // Colour shifts: green → amber (warning) → red (critical)
+  // Colour shifts: green (active) → green (idle) → amber (warning) → red (critical)
   const countdownColorClass =
     secondsLeft <= 30
       ? "text-destructive"
       : isWarning
       ? "text-yellow-500"
+      : isIdle
+      ? "text-green-400"
       : "text-green-500";
+
+  const showCountdown = isUnlocked && isIdle;
 
   return (
     <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-card/30 backdrop-blur-md shrink-0">
@@ -65,14 +69,18 @@ export function DashboardNavbar({ user }: DashboardNavbarProps) {
 
           {isUnlocked ? (
             <p className={cn(
-              "hidden sm:flex items-center gap-1.5 text-[10px] font-medium mt-0.5 transition-colors duration-500",
+              "hidden sm:flex items-center gap-1.5 text-[10px] font-medium mt-0.5 transition-all duration-500",
               countdownColorClass
             )}>
-              <Timer className="w-2.5 h-2.5" />
-              {isWarning
-                ? <>Auto-locks in <span className="font-mono">{formatCountdown(secondsLeft)}</span></>
-                : <>Session secured · Auto-locks on inactivity</>
-              }
+              <Timer className="w-2.5 h-2.5 shrink-0" />
+              {showCountdown ? (
+                <>
+                  {isWarning ? "Auto-locks in " : "Idle · Auto-locks in "}
+                  <span className="font-mono tabular-nums">{formatCountdown(secondsLeft)}</span>
+                </>
+              ) : (
+                <>Session secured · Auto-locks in {autoLockMinutes}m on inactivity</>
+              )}
             </p>
           ) : (
             <p className="hidden sm:block text-[10px] text-muted-foreground font-medium mt-0.5">

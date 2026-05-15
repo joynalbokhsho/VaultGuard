@@ -42,6 +42,9 @@ interface VaultState {
   selectedEntryId: string | null;
   isMobileSidebarOpen: boolean;
 
+  // Auto-lock setting (persisted)
+  autoLockMinutes: number;
+
   // Actions
   setMasterKey: (key: CryptoKey) => void;
   lockVault: () => void;
@@ -54,6 +57,7 @@ interface VaultState {
   setActiveCategory: (category: EntryType | "ALL" | "FAVORITES") => void;
   setSelectedEntryId: (id: string | null) => void;
   setMobileSidebar: (isOpen: boolean) => void;
+  setAutoLockMinutes: (minutes: number) => void;
 }
 
 export const useVaultStore = create<VaultState>()((set) => ({
@@ -65,6 +69,9 @@ export const useVaultStore = create<VaultState>()((set) => ({
   activeCategory: "ALL",
   selectedEntryId: null,
   isMobileSidebarOpen: false,
+  autoLockMinutes: typeof window !== "undefined"
+    ? Number(localStorage.getItem("vaultguard-autolock") ?? 15)
+    : 15,
 
   setMasterKey: (key) =>
     set({ masterKey: key, isUnlocked: true, isUnlocking: false }),
@@ -104,4 +111,11 @@ export const useVaultStore = create<VaultState>()((set) => ({
   setSelectedEntryId: (id) => set({ selectedEntryId: id }),
 
   setMobileSidebar: (isOpen) => set({ isMobileSidebarOpen: isOpen }),
+
+  setAutoLockMinutes: (minutes) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("vaultguard-autolock", String(minutes));
+    }
+    set({ autoLockMinutes: minutes });
+  },
 }));
