@@ -180,7 +180,9 @@ export function LoginForm() {
                     className="text-xs h-auto p-0 font-bold text-primary hover:text-primary/80"
                     onClick={async () => {
                       try {
-                        const result = await (authClient as any).twoFactor.sendVerificationCode();
+                        const result = await (authClient as any).twoFactor.sendOtp({
+                          type: "email",
+                        });
                         if (result.error) throw new Error(result.error.message);
                         toast.success("Verification code sent to your email!");
                       } catch (e: any) {
