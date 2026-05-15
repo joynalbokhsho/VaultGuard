@@ -14,6 +14,11 @@ import { registerSchema, masterPasswordSchema } from "@/lib/validations/schemas"
 import { generateKdfSalt, deriveMasterKey } from "@/lib/crypto/keyDerivation";
 import { encryptVaultMeta, createMasterKeyVerifier } from "@/lib/crypto/vault";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
 const fullSchema = registerSchema.extend({
   masterPassword: masterPasswordSchema,
   confirmMasterPassword: z.string(),
@@ -23,22 +28,6 @@ const fullSchema = registerSchema.extend({
 });
 
 type FormData = z.infer<typeof fullSchema>;
-
-const C = {
-  bg: "#09090f",
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  input: "#1a1a2e",
-  primary: "#7c3aed",
-  primaryHover: "#6d28d9",
-  error: "#ef4444",
-  errorBg: "rgba(239,68,68,0.1)",
-  errorBorder: "rgba(239,68,68,0.2)",
-  infoBg: "rgba(124,58,237,0.08)",
-  infoBorder: "rgba(124,58,237,0.25)",
-};
 
 const checks = [
   { label: "At least 12 characters", test: (p: string) => p.length >= 12 },
@@ -54,7 +43,6 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [masterVal, setMasterVal] = useState("");
-  const [focused, setFocused] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(fullSchema),
@@ -64,8 +52,17 @@ export function RegisterForm() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await signUp.email({ email: data.email, password: data.password, name: data.name ?? data.email.split("@")[0], callbackURL: "/vault" });
-      if (result.error) { setError(result.error.message ?? "Registration failed"); return; }
+      const result = await signUp.email({ 
+        email: data.email, 
+        password: data.password, 
+        name: data.name ?? data.email.split("@")[0], 
+        callbackURL: "/vault" 
+      });
+      
+      if (result.error) { 
+        setError(result.error.message ?? "Registration failed"); 
+        return; 
+      }
 
       const kdfSalt = generateKdfSalt();
       const masterKey = await deriveMasterKey(data.masterPassword, kdfSalt);
@@ -89,152 +86,167 @@ export function RegisterForm() {
     }
   };
 
-  const inputStyle = (id: string, extra: React.CSSProperties = {}): React.CSSProperties => ({
-    width: "100%",
-    padding: "10px 16px",
-    borderRadius: 8,
-    backgroundColor: C.input,
-    border: `1px solid ${focused === id ? C.primary : C.border}`,
-    color: C.fg,
-    fontSize: 14,
-    outline: "none",
-    fontFamily: "inherit",
-    boxShadow: focused === id ? "0 0 0 2px rgba(124,58,237,0.2)" : "none",
-    transition: "border-color 0.15s, box-shadow 0.15s",
-    ...extra,
-  });
-
   return (
-    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <div className="p-6 md:p-8" style={{ backgroundColor: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 16, boxShadow: "0 25px 50px rgba(0,0,0,0.5)" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: C.primary, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <ShieldCheck size={28} color="#fff" />
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="w-full max-w-[450px]">
+      <Card className="border-border/50 shadow-xl bg-card/50 backdrop-blur-sm">
+        <CardHeader className="space-y-1 flex flex-col items-center">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
+            <ShieldCheck className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Create your vault</h1>
-          <p style={{ fontSize: 14, color: C.fgMuted }}>Free forever. End-to-end encrypted.</p>
-        </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">Create your vault</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Free forever. End-to-end encrypted.
+          </CardDescription>
+        </CardHeader>
 
-        {/* Error */}
-        <AnimatePresence>
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ marginBottom: 20, padding: "10px 14px", borderRadius: 8, backgroundColor: C.errorBg, border: `1px solid ${C.errorBorder}`, display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: C.error }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <CardContent className="space-y-4">
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: "auto" }} 
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-3 py-2 rounded-md flex items-center gap-2 overflow-hidden"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Name */}
-          <div>
-            <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>
-              Name <span style={{ color: C.fgMuted }}>(optional)</span>
-            </label>
-            <input id="reg-name" type="text" autoComplete="name" placeholder="Your name"
-              onFocus={() => setFocused("name")}
-              style={inputStyle("name")} {...register("name", { onBlur: () => setFocused(null) })} />
-          </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-4">
+              {/* Account Details */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reg-name">Name <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input 
+                    id="reg-name" 
+                    placeholder="Your name" 
+                    {...register("name")} 
+                    className="bg-background/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-email">Email address</Label>
+                  <Input 
+                    id="reg-email" 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    {...register("email")} 
+                    className="bg-background/50"
+                  />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-password">Login password</Label>
+                  <div className="relative">
+                    <Input 
+                      id="reg-password" 
+                      type={showPw ? "text" : "password"} 
+                      placeholder="Min. 8 characters" 
+                      {...register("password")} 
+                      className="bg-background/50 pr-10"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+                </div>
+              </div>
 
-          {/* Email */}
-          <div>
-            <label htmlFor="reg-email" style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>Email address</label>
-            <input id="reg-email" type="email" autoComplete="email" placeholder="you@example.com"
-              onFocus={() => setFocused("email")}
-              style={inputStyle("email")} {...register("email", { onBlur: () => setFocused(null) })} />
-            {errors.email && <p style={{ fontSize: 12, color: C.error, marginTop: 4 }}>{errors.email.message}</p>}
-          </div>
+              <div className="h-px bg-border/50 my-4" />
 
-          {/* Login Password */}
-          <div>
-            <label htmlFor="reg-password" style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>Login password</label>
-            <div style={{ position: "relative" }}>
-              <input id="reg-password" type={showPw ? "text" : "password"} autoComplete="new-password" placeholder="Min. 8 characters"
-                onFocus={() => setFocused("password")}
-                style={inputStyle("password", { paddingRight: 44 })} {...register("password", { onBlur: () => setFocused(null) })} />
-              <button type="button" onClick={() => setShowPw(!showPw)}
-                style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.fgMuted, display: "flex", padding: 0 }}>
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              {/* Security Details */}
+              <div className="bg-primary/5 border border-primary/20 rounded-md p-3 flex gap-3 text-xs leading-relaxed text-foreground/80">
+                <Info className="w-4 h-4 shrink-0 text-primary mt-0.5" />
+                <p>
+                  <strong className="text-primary">Master password</strong> is separate from your login password. It encrypts your vault locally. 
+                  <span className="font-semibold text-foreground"> If lost, data cannot be recovered.</span>
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reg-master">Master password</Label>
+                  <div className="relative">
+                    <Input 
+                      id="reg-master" 
+                      type={showMaster ? "text" : "password"} 
+                      placeholder="Strong passphrase" 
+                      {...register("masterPassword", { onChange: (e) => setMasterVal(e.target.value) })}
+                      className="bg-background/50 pr-10 font-mono"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowMaster(!showMaster)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showMaster ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.masterPassword && <p className="text-xs text-destructive">{errors.masterPassword.message}</p>}
+
+                  <AnimatePresence>
+                    {masterVal.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }} 
+                        animate={{ opacity: 1, height: "auto" }} 
+                        exit={{ opacity: 0, height: 0 }}
+                        className="grid grid-cols-2 gap-2 mt-2"
+                      >
+                        {checks.map((c) => {
+                          const ok = c.test(masterVal);
+                          return (
+                            <div key={c.label} className="flex items-center gap-1.5 text-[10px]">
+                              <CheckCircle className={`w-3 h-3 ${ok ? "text-green-500" : "text-muted-foreground/30"}`} />
+                              <span className={ok ? "text-foreground" : "text-muted-foreground"}>{c.label}</span>
+                            </div>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reg-master-confirm">Confirm master password</Label>
+                  <Input 
+                    id="reg-master-confirm" 
+                    type="password" 
+                    placeholder="Re-enter master password" 
+                    {...register("confirmMasterPassword")} 
+                    className="bg-background/50 font-mono"
+                  />
+                  {errors.confirmMasterPassword && <p className="text-xs text-destructive">{errors.confirmMasterPassword.message}</p>}
+                </div>
+              </div>
             </div>
-            {errors.password && <p style={{ fontSize: 12, color: C.error, marginTop: 4 }}>{errors.password.message}</p>}
-          </div>
 
-          {/* Divider */}
-          <div style={{ borderTop: `1px solid ${C.border}`, margin: "4px 0" }} />
+            <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Create vault
+            </Button>
+          </form>
+        </CardContent>
 
-          {/* Master password info */}
-          <div style={{ padding: "10px 14px", borderRadius: 8, backgroundColor: C.infoBg, border: `1px solid ${C.infoBorder}`, display: "flex", gap: 8, fontSize: 13, color: "#a78bfa" }}>
-            <Info size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-            <span>
-              <strong>Master password</strong> is separate from your login password. It encrypts your vault locally — we never see it.{" "}
-              <strong>If you lose it, your vault data cannot be recovered.</strong>
-            </span>
-          </div>
+        <CardFooter className="flex justify-center border-t border-border/30 pt-6">
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary hover:underline font-medium">Sign in</Link>
+          </p>
+        </CardFooter>
+      </Card>
 
-          {/* Master Password */}
-          <div>
-            <label htmlFor="reg-master" style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>Master password</label>
-            <div style={{ position: "relative" }}>
-              <input id="reg-master" type={showMaster ? "text" : "password"} autoComplete="off" placeholder="Min. 12 chars, strong passphrase"
-                onFocus={() => setFocused("master")}
-                style={inputStyle("master", { paddingRight: 44, fontFamily: "monospace" })}
-                {...register("masterPassword", { onChange: (e) => setMasterVal(e.target.value), onBlur: () => setFocused(null) })} />
-              <button type="button" onClick={() => setShowMaster(!showMaster)}
-                style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.fgMuted, display: "flex", padding: 0 }}>
-                {showMaster ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            {errors.masterPassword && <p style={{ fontSize: 12, color: C.error, marginTop: 4 }}>{errors.masterPassword.message}</p>}
-
-            {/* Strength checklist */}
-            <AnimatePresence>
-              {masterVal.length > 0 && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4, overflow: "hidden" }}>
-                  {checks.map((c) => {
-                    const ok = c.test(masterVal);
-                    return (
-                      <div key={c.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                        <CheckCircle size={13} color={ok ? "#34d399" : "#3f3f5c"} />
-                        <span style={{ color: ok ? C.fg : C.fgMuted }}>{c.label}</span>
-                      </div>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Confirm Master */}
-          <div>
-            <label htmlFor="reg-master-confirm" style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>Confirm master password</label>
-            <input id="reg-master-confirm" type="password" autoComplete="off" placeholder="Re-enter master password"
-              onFocus={() => setFocused("confirm")}
-              style={inputStyle("confirm", { fontFamily: "monospace" })} {...register("confirmMasterPassword", { onBlur: () => setFocused(null) })} />
-            {errors.confirmMasterPassword && <p style={{ fontSize: 12, color: C.error, marginTop: 4 }}>{errors.confirmMasterPassword.message}</p>}
-          </div>
-
-          {/* Submit */}
-          <button id="register-submit" type="submit" disabled={isLoading}
-            style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: C.primary, color: "#fff", fontWeight: 600, fontSize: 14, border: "none", cursor: isLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", opacity: isLoading ? 0.7 : 1, transition: "opacity 0.15s", marginTop: 4 }}>
-            {isLoading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />Creating vault…</> : "Create vault"}
-          </button>
-        </form>
-
-        <p style={{ textAlign: "center", fontSize: 14, color: C.fgMuted, marginTop: 24 }}>
-          Already have an account?{" "}
-          <Link href="/login" style={{ color: C.primary, fontWeight: 500, textDecoration: "none" }}>Sign in</Link>
-        </p>
+      <div className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground/60">
+        <Lock className="w-3 h-3" />
+        <span>Your vault is encrypted before reaching our servers</span>
       </div>
-
-      <p style={{ textAlign: "center", fontSize: 12, color: "#6b7280", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-        <Lock size={12} /> Your vault is encrypted before reaching our servers
-      </p>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </motion.div>
   );
 }

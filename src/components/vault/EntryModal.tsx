@@ -3,13 +3,28 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { X, Loader2, Globe, FileText, CreditCard, KeyRound, Terminal, User } from "lucide-react";
 import { toast } from "sonner";
 import { useVaultStore, type DecryptedEntry } from "@/store/vaultStore";
 import { encryptVaultEntry } from "@/lib/crypto/vault";
 import type { EntryType, VaultEntryData } from "@/lib/crypto/vault";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 const entrySchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -39,25 +54,12 @@ type EntryFormData = z.infer<typeof entrySchema>;
 
 const typeConfig = [
   { value: "CREDENTIAL" as EntryType, label: "Password", icon: Globe },
-  { value: "NOTE" as EntryType, label: "Secure Note", icon: FileText },
+  { value: "NOTE" as EntryType, label: "Note", icon: FileText },
   { value: "CARD" as EntryType, label: "Card", icon: CreditCard },
   { value: "API_KEY" as EntryType, label: "API Key", icon: KeyRound },
   { value: "SSH_KEY" as EntryType, label: "SSH Key", icon: Terminal },
   { value: "IDENTITY" as EntryType, label: "Identity", icon: User },
 ];
-
-const C = {
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  input: "#1a1a2e",
-  primary: "#7c3aed",
-  primaryHover: "#6d28d9",
-  ring: "rgba(124,58,237,0.3)",
-  accent: "rgba(255,255,255,0.06)",
-  destructive: "#ef4444",
-};
 
 interface EntryModalProps {
   mode: "create" | "edit";
@@ -67,13 +69,13 @@ interface EntryModalProps {
 }
 
 export function EntryModal({ mode, entry, onClose, onSave }: EntryModalProps) {
-  const { masterKey, addEntry } = useVaultStore();
+  const { masterKey } = useVaultStore();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedType, setSelectedType] = useState<EntryType>(
     entry?.type ?? "CREDENTIAL"
   );
 
-  const { register, handleSubmit, formState: { errors } } = useForm<EntryFormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<EntryFormData>({
     resolver: zodResolver(entrySchema),
     defaultValues: {
       type: entry?.type ?? "CREDENTIAL",
@@ -94,6 +96,8 @@ export function EntryModal({ mode, entry, onClose, onSave }: EntryModalProps) {
       tags: entry?.data.tags?.join(", ") ?? "",
     },
   });
+
+  const isFavorite = watch("isFavorite");
 
   const onSubmit = async (data: EntryFormData) => {
     if (!masterKey) {
@@ -127,7 +131,6 @@ export function EntryModal({ mode, entry, onClose, onSave }: EntryModalProps) {
         cvv: data.cvv,
       };
 
-      // Encrypt client-side before sending
       const { encryptedData, iv } = await encryptVaultEntry(entryData, masterKey);
 
       const url = mode === "edit" ? `/api/entries/${entry!.id}` : "/api/entries";
@@ -146,7 +149,7 @@ export function EntryModal({ mode, entry, onClose, onSave }: EntryModalProps) {
 
       if (!res.ok) throw new Error("Failed to save entry");
 
-      toast.success(mode === "create" ? "Entry added to vault" : "Entry updated");
+      toast.success(mode === "create" ? "Item added to vault" : "Item updated");
       onSave();
       onClose();
     } catch (err) {
@@ -157,214 +160,212 @@ export function EntryModal({ mode, entry, onClose, onSave }: EntryModalProps) {
     }
   };
 
-  const inputStyle = {
-    width: "100%", padding: "10px 12px", borderRadius: 8, backgroundColor: C.input, border: `1px solid ${C.border}`,
-    color: C.fg, fontSize: 14, outline: "none", transition: "border-color 0.15s", fontFamily: "inherit"
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, y: 16 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.95, y: 16 }}
-        onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 512, backgroundColor: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
-      >
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ fontWeight: 600, color: C.fg, fontSize: 16 }}>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px] gap-0 p-0 overflow-hidden bg-card border-border/50 shadow-2xl">
+        <DialogHeader className="p-6 pb-2 border-b border-border/30">
+          <DialogTitle className="text-xl font-bold tracking-tight">
             {mode === "create" ? "Add new item" : "Edit item"}
-          </h2>
-          <button
-            onClick={onClose}
-            style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: C.fgMuted, background: "none", border: "none", cursor: "pointer", transition: "all 0.15s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = C.fg; e.currentTarget.style.backgroundColor = C.accent; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = C.fgMuted; e.currentTarget.style.backgroundColor = "transparent"; }}
-          >
-            <X size={16} />
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            {mode === "create" ? "Create a new encrypted item in your vault." : "Update your encrypted vault item."}
+          </DialogDescription>
+        </DialogHeader>
 
-        <div style={{ overflow: "auto", flex: 1, padding: 24 }}>
-          <form id="entry-form" onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="max-h-[70vh] overflow-y-auto px-6 py-4 space-y-6">
+          <form id="entry-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Type selector */}
-            <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: C.fgMuted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
-                Item type
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <div className="space-y-3">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Item Type</Label>
+              <div className="grid grid-cols-3 gap-2">
                 {typeConfig.map((type) => (
-                  <button
+                  <Button
                     key={type.value}
                     type="button"
-                    onClick={() => setSelectedType(type.value)}
-                    style={{
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: 12, borderRadius: 8, fontSize: 12, fontWeight: 500, transition: "all 0.15s", cursor: "pointer",
-                      border: `1px solid ${selectedType === type.value ? C.primary : C.border}`,
-                      backgroundColor: selectedType === type.value ? "rgba(124,58,237,0.1)" : "transparent",
-                      color: selectedType === type.value ? C.primary : C.fgMuted
+                    variant={selectedType === type.value ? "default" : "outline"}
+                    className={cn(
+                      "h-auto flex-col py-3 gap-1.5 transition-all",
+                      selectedType === type.value ? "shadow-md shadow-primary/20" : "bg-card/30 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                    onClick={() => {
+                      setSelectedType(type.value);
+                      setValue("type", type.value);
                     }}
-                    onMouseEnter={(e) => { if (selectedType !== type.value) e.currentTarget.style.borderColor = C.ring; }}
-                    onMouseLeave={(e) => { if (selectedType !== type.value) e.currentTarget.style.borderColor = C.border; }}
                   >
-                    <type.icon size={16} />
-                    {type.label}
-                  </button>
+                    <type.icon className="w-4 h-4" />
+                    <span className="text-[10px] font-semibold">{type.label}</span>
+                  </Button>
                 ))}
               </div>
             </div>
 
-            {/* Title */}
-            <Field label="Title" error={errors.title?.message}>
-              <input
-                id="entry-title"
-                type="text"
-                {...register("title")}
-                placeholder="e.g. Gmail, GitHub, Bank..."
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = C.primary}
-                onBlur={(e) => e.target.style.borderColor = C.border}
-              />
-            </Field>
+            {/* Basic Info */}
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="entry-title">Title</Label>
+                <Input
+                  id="entry-title"
+                  placeholder="e.g. GitHub, Amazon, Home Wi-Fi"
+                  {...register("title")}
+                  className="bg-background/50 border-border/50"
+                />
+                {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+              </div>
 
-            {/* Type-specific fields */}
-            {selectedType === "CREDENTIAL" && (
-              <>
-                <Field label="Username / Email">
-                  <input id="entry-username" type="text" {...register("username")} placeholder="username@example.com" style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="Password">
-                  <input id="entry-password" type="password" {...register("password")} placeholder="Password" style={{ ...inputStyle, fontFamily: "monospace" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="Website URL">
-                  <input id="entry-url" type="url" {...register("url")} placeholder="https://example.com" style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-              </>
-            )}
+              {/* Type-specific fields */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedType}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.15 }}
+                  className="space-y-4"
+                >
+                  {selectedType === "CREDENTIAL" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-username">Username or Email</Label>
+                        <Input id="entry-username" {...register("username")} placeholder="user@example.com" className="bg-background/50 border-border/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-password">Password</Label>
+                        <Input id="entry-password" type="password" {...register("password")} placeholder="••••••••" className="bg-background/50 border-border/50 font-mono" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-url">Website URL</Label>
+                        <Input id="entry-url" type="url" {...register("url")} placeholder="https://example.com" className="bg-background/50 border-border/50" />
+                      </div>
+                    </>
+                  )}
 
-            {selectedType === "NOTE" && (
-              <Field label="Content">
-                <textarea id="entry-content" {...register("content")} placeholder="Your secure note..." rows={5} style={{ ...inputStyle, resize: "none" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-              </Field>
-            )}
+                  {selectedType === "NOTE" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="entry-content">Secure Note</Label>
+                      <textarea 
+                        id="entry-content" 
+                        {...register("content")} 
+                        placeholder="Type your sensitive information here..." 
+                        rows={6}
+                        className="flex min-h-[120px] w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                      />
+                    </div>
+                  )}
 
-            {selectedType === "CARD" && (
-              <>
-                <Field label="Card number">
-                  <input id="entry-cardnumber" type="text" {...register("cardNumber")} placeholder="1234 5678 9012 3456" style={{ ...inputStyle, fontFamily: "monospace" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="Cardholder name">
-                  <input id="entry-cardholder" type="text" {...register("cardholderName")} placeholder="Full name" style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-                  <Field label="Month">
-                    <input type="text" {...register("expiryMonth")} placeholder="MM" style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                  </Field>
-                  <Field label="Year">
-                    <input type="text" {...register("expiryYear")} placeholder="YY" style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                  </Field>
-                  <Field label="CVV">
-                    <input type="text" {...register("cvv")} placeholder="123" style={{ ...inputStyle, fontFamily: "monospace" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                  </Field>
-                </div>
-              </>
-            )}
+                  {selectedType === "CARD" && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-cardnumber">Card Number</Label>
+                        <Input id="entry-cardnumber" {...register("cardNumber")} placeholder="•••• •••• •••• ••••" className="bg-background/50 border-border/50 font-mono" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-cardholder">Cardholder Name</Label>
+                        <Input id="entry-cardholder" {...register("cardholderName")} placeholder="FULL NAME" className="bg-background/50 border-border/50" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-2">
+                          <Label>Expiry MM</Label>
+                          <Input {...register("expiryMonth")} placeholder="MM" maxLength={2} className="bg-background/50 border-border/50 text-center" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Expiry YY</Label>
+                          <Input {...register("expiryYear")} placeholder="YY" maxLength={2} className="bg-background/50 border-border/50 text-center" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>CVV</Label>
+                          <Input {...register("cvv")} type="password" placeholder="•••" maxLength={4} className="bg-background/50 border-border/50 text-center font-mono" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-            {selectedType === "API_KEY" && (
-              <>
-                <Field label="Service name">
-                  <input id="entry-service" type="text" {...register("service")} placeholder="OpenAI, AWS, etc." style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="API Key">
-                  <input id="entry-apikey" type="password" {...register("apiKey")} placeholder="sk-..." style={{ ...inputStyle, fontFamily: "monospace" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="API Secret (optional)">
-                  <input type="password" {...register("apiSecret")} placeholder="Secret key" style={{ ...inputStyle, fontFamily: "monospace" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-              </>
-            )}
+                  {selectedType === "API_KEY" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-service">Service Name</Label>
+                        <Input id="entry-service" {...register("service")} placeholder="OpenAI, Stripe, etc." className="bg-background/50 border-border/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-apikey">API Key</Label>
+                        <Input id="entry-apikey" type="password" {...register("apiKey")} placeholder="sk-..." className="bg-background/50 border-border/50 font-mono" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-api-secret">API Secret</Label>
+                        <Input id="entry-api-secret" type="password" {...register("apiSecret")} placeholder="Secret..." className="bg-background/50 border-border/50 font-mono" />
+                      </div>
+                    </>
+                  )}
 
-            {selectedType === "SSH_KEY" && (
-              <>
-                <Field label="Hostname">
-                  <input type="text" {...register("hostname")} placeholder="github.com" style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="Private key">
-                  <textarea {...register("privateKey")} placeholder="-----BEGIN RSA PRIVATE KEY-----" rows={5} style={{ ...inputStyle, fontFamily: "monospace", resize: "none", fontSize: 12 }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="Public key">
-                  <textarea {...register("publicKey")} placeholder="ssh-rsa AAAA..." rows={3} style={{ ...inputStyle, fontFamily: "monospace", resize: "none", fontSize: 12 }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-                <Field label="Passphrase">
-                  <input type="password" {...register("passphrase")} placeholder="Key passphrase" style={{ ...inputStyle, fontFamily: "monospace" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-                </Field>
-              </>
-            )}
+                  {selectedType === "SSH_KEY" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-hostname">Hostname / Label</Label>
+                        <Input id="entry-hostname" {...register("hostname")} placeholder="Production Server" className="bg-background/50 border-border/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Private Key</Label>
+                        <Textarea 
+                          {...register("privateKey")} 
+                          placeholder="-----BEGIN RSA PRIVATE KEY-----" 
+                          className="min-h-[100px] text-[10px] font-mono bg-background/50 border-border/50 resize-none"
+                        />
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
-            {/* Notes & Tags */}
-            <Field label="Notes (optional)">
-              <textarea {...register("notes")} placeholder="Additional notes..." rows={2} style={{ ...inputStyle, resize: "none" }} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-            </Field>
+            <div className="h-px bg-border/30" />
 
-            <Field label="Tags (optional)">
-              <input type="text" {...register("tags")} placeholder="work, personal, bank (comma-separated)" style={inputStyle} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.border} />
-            </Field>
+            {/* Meta */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="entry-tags">Tags <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+                <Input id="entry-tags" {...register("tags")} placeholder="work, finance, social" className="bg-background/50 border-border/50" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="entry-notes">Additional Notes</Label>
+                <Textarea 
+                  id="entry-notes" 
+                  {...register("notes")} 
+                  placeholder="Any extra details..." 
+                  className="min-h-[60px] bg-background/50 border-border/50 resize-none"
+                />
+              </div>
 
-            {/* Favorite */}
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 8 }}>
-              <input type="checkbox" {...register("isFavorite")} style={{ borderRadius: 4, width: 16, height: 16, accentColor: C.primary }} />
-              <span style={{ fontSize: 14, color: C.fg }}>Add to favorites</span>
-            </label>
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox 
+                  id="entry-favorite" 
+                  checked={isFavorite}
+                  onCheckedChange={(checked) => setValue("isFavorite", !!checked)}
+                />
+                <label
+                  htmlFor="entry-favorite"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Mark as favorite
+                </label>
+              </div>
+            </div>
           </form>
         </div>
 
-        {/* Footer */}
-        <div style={{ display: "flex", gap: 12, padding: "16px 24px", borderTop: `1px solid ${C.border}` }}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.fg, fontSize: 14, fontWeight: 500, cursor: "pointer", transition: "background-color 0.15s" }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.accent}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-          >
+        <DialogFooter className="p-6 pt-2 border-t border-border/30 bg-muted/20">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
             Cancel
-          </button>
-          <button
-            id="entry-save-btn"
-            type="submit"
-            form="entry-form"
+          </Button>
+          <Button 
+            form="entry-form" 
+            type="submit" 
             disabled={isLoading}
-            style={{ flex: 1, padding: "10px 0", borderRadius: 8, backgroundColor: C.primary, color: "#fff", fontSize: 14, fontWeight: 600, border: "none", cursor: isLoading ? "not-allowed" : "pointer", opacity: isLoading ? 0.5 : 1, transition: "opacity 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-            onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.opacity = "0.9"; }}
-            onMouseLeave={(e) => { if (!isLoading) e.currentTarget.style.opacity = "1"; }}
+            className="px-8 shadow-lg shadow-primary/20"
           >
-            {isLoading ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : null}
-            {isLoading ? "Encrypting…" : mode === "create" ? "Add to vault" : "Save changes"}
-          </button>
-        </div>
-      </motion.div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </motion.div>
-  );
-}
-
-function Field({
-  label, error, children,
-}: {
-  label: string; error?: string; children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>{label}</label>
-      {children}
-      {error && <p style={{ marginTop: 4, fontSize: 12, color: C.destructive }}>{error}</p>}
-    </div>
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {isLoading ? "Encrypting..." : mode === "create" ? "Add to vault" : "Save changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

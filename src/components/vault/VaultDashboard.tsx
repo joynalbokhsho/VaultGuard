@@ -10,22 +10,14 @@ import { VaultUnlock } from "./VaultUnlock";
 import { EntryList } from "./EntryList";
 import { EntryModal } from "./EntryModal";
 import { CategoryFilter } from "./CategoryFilter";
-import { deriveMasterKey } from "@/lib/crypto/keyDerivation";
 import { decryptVaultEntry } from "@/lib/crypto/vault";
 import type { DecryptedEntry } from "@/store/vaultStore";
 import type { EntryType } from "@/lib/crypto/vault";
 
-const C = {
-  bg: "#09090f",
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  input: "#1a1a2e",
-  primary: "#7c3aed",
-  primaryHover: "#6d28d9",
-  ring: "rgba(124,58,237,0.2)",
-};
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export function VaultDashboard() {
   const {
@@ -36,12 +28,10 @@ export function VaultDashboard() {
     activeCategory,
     setSearchQuery,
     setEntries,
-    setMasterKey,
   } = useVaultStore();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
-  const [focused, setFocused] = useState(false);
 
   // Auto-lock on inactivity
   useInactivityLock({ timeoutMs: 15 * 60 * 1000 });
@@ -123,106 +113,103 @@ export function VaultDashboard() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 h-full">
+    <div className="flex flex-col md:flex-row gap-6 h-full p-4 md:p-0">
       {/* Left: Category filter */}
       <CategoryFilter />
 
       {/* Main content */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Search + actions bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div style={{ flex: 1, position: "relative" }}>
-            <Search size={16} color={C.fgMuted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-            <input
-              id="vault-search"
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              placeholder="Search vault…"
-              style={{
-                width: "100%",
-                padding: "10px 16px 10px 36px",
-                borderRadius: 8,
-                backgroundColor: C.bgCard,
-                border: `1px solid ${focused ? C.primary : C.border}`,
-                color: C.fg,
-                fontSize: 14,
-                outline: "none",
-                fontFamily: "inherit",
-                boxShadow: focused ? `0 0 0 2px ${C.ring}` : "none",
-                transition: "border-color 0.15s, box-shadow 0.15s",
-              }}
-            />
-          </div>
-          <button
-            id="add-entry-btn"
-            onClick={() => setShowAddModal(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 8, padding: "10px 16px",
-              borderRadius: 8, backgroundColor: C.primary, color: "#fff",
-              fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer",
-              whiteSpace: "nowrap", transition: "opacity 0.15s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <Plus size={16} />
-            Add item
-          </button>
-        </div>
-
-        {/* Entries */}
-        {isLoadingEntries ? (
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <Loader2 size={32} color={C.primary} style={{ animation: "spin 1s linear infinite" }} />
-              <p style={{ fontSize: 14, color: C.fgMuted }}>Decrypting vault…</p>
+      <div className="flex-1 min-w-0 flex flex-col">
+        <Card className="flex-1 flex flex-col border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
+          <div className="p-4 sm:p-6 border-b border-border/30 bg-muted/20">
+            {/* Search + actions bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex-1 relative group">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-primary" />
+                <Input
+                  id="vault-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search vault…"
+                  className="pl-9 bg-background/50 border-border/50 transition-all focus:bg-background"
+                />
+              </div>
+              <Button
+                id="add-entry-btn"
+                onClick={() => setShowAddModal(true)}
+                className="shadow-lg shadow-primary/20"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add item
+              </Button>
             </div>
           </div>
-        ) : filteredEntries.length === 0 ? (
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{ textAlign: "center" }}
-            >
-              {entries.length === 0 ? (
-                <>
-                  <div style={{ width: 64, height: 64, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                    <Lock size={32} color={C.fgMuted} />
-                  </div>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, color: C.fg, marginBottom: 4 }}>Your vault is empty</h3>
-                  <p style={{ fontSize: 14, color: C.fgMuted, marginBottom: 16 }}>
-                    Add your first password, note, or card
-                  </p>
-                  <button
-                    onClick={() => setShowAddModal(true)}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px",
-                      borderRadius: 8, backgroundColor: C.primary, color: "#fff",
-                      fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer",
-                      transition: "opacity 0.15s"
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-                  >
-                    <Plus size={16} />
-                    Add first item
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Search size={40} color={C.fgMuted} style={{ margin: "0 auto 12px" }} />
-                  <p style={{ color: C.fgMuted }}>No results for &quot;{searchQuery}&quot;</p>
-                </>
-              )}
-            </motion.div>
+
+          <div className="flex-1 p-4 sm:p-6 overflow-y-auto relative min-h-[400px]">
+            {/* Entries */}
+            {isLoadingEntries ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground animate-pulse">Decrypting secure vault…</p>
+              </div>
+            ) : filteredEntries.length === 0 ? (
+              <div className="absolute inset-0 flex items-center justify-center p-6">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center max-w-sm"
+                >
+                  {entries.length === 0 ? (
+                    <div className="space-y-6">
+                      <div className="w-20 h-20 rounded-3xl bg-muted/30 border border-border flex items-center justify-center mx-auto shadow-inner">
+                        <Lock className="w-10 h-10 text-muted-foreground/40" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-bold tracking-tight">Your vault is empty</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Securely store your passwords, secure notes, and payment cards in your zero-knowledge vault.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setShowAddModal(true)}
+                        size="lg"
+                        className="px-8 shadow-xl shadow-primary/20"
+                      >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add first item
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mx-auto">
+                        <Search className="w-8 h-8 text-muted-foreground/30" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {searchQuery ? (
+                          <>No results found for <span className="text-foreground font-medium">&quot;{searchQuery}&quot;</span></>
+                        ) : (
+                          <>No items found in <span className="text-foreground font-medium">
+                            {activeCategory === "ALL" ? "your vault" : 
+                             activeCategory === "FAVORITES" ? "Favorites" : 
+                             activeCategory === "IDENTITY" ? "Identities" :
+                             activeCategory.toLowerCase() + "s"}
+                          </span></>
+                        )}
+                      </p>
+                      {searchQuery && (
+                        <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")}>
+                          Clear search
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+            ) : (
+              <EntryList entries={filteredEntries} onRefresh={loadEntries} />
+            )}
           </div>
-        ) : (
-          <EntryList entries={filteredEntries} onRefresh={loadEntries} />
-        )}
+        </Card>
       </div>
 
       {/* Add entry modal */}
@@ -235,8 +222,6 @@ export function VaultDashboard() {
           />
         )}
       </AnimatePresence>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

@@ -13,26 +13,20 @@ import {
   LayoutGrid,
 } from "lucide-react";
 
-const C = {
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  primary: "#7c3aed",
-  primaryHover: "#6d28d9",
-  hoverBg: "rgba(255,255,255,0.06)",
-  activeBg: "rgba(124,58,237,0.1)",
-  badgeBg: "rgba(255,255,255,0.1)",
-  badgeActiveBg: "rgba(124,58,237,0.2)",
-};
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const categories: { value: EntryType | "ALL" | "FAVORITES"; label: string; icon: typeof Globe; color: string }[] = [
-  { value: "ALL", label: "All items", icon: LayoutGrid, color: C.fg },
-  { value: "FAVORITES", label: "Favorites", icon: Star, color: "#eab308" },
-  { value: "CREDENTIAL", label: "Passwords", icon: Globe, color: "#3b82f6" },
-  { value: "NOTE", label: "Notes", icon: FileText, color: "#10b981" },
-  { value: "CARD", label: "Cards", icon: CreditCard, color: "#ec4899" },
-  { value: "API_KEY", label: "API Keys", icon: KeyRound, color: "#f97316" },
-  { value: "SSH_KEY", label: "SSH Keys", icon: Terminal, color: "#8b5cf6" },
-  { value: "IDENTITY", label: "Identities", icon: User, color: "#06b6d4" },
+  { value: "ALL", label: "All items", icon: LayoutGrid, color: "text-foreground" },
+  { value: "FAVORITES", label: "Favorites", icon: Star, color: "text-yellow-500" },
+  { value: "CREDENTIAL", label: "Passwords", icon: Globe, color: "text-blue-500" },
+  { value: "NOTE", label: "Secure Notes", icon: FileText, color: "text-emerald-500" },
+  { value: "CARD", label: "Payment Cards", icon: CreditCard, color: "text-pink-500" },
+  { value: "API_KEY", label: "API Keys", icon: KeyRound, color: "text-orange-500" },
+  { value: "SSH_KEY", label: "SSH Keys", icon: Terminal, color: "text-purple-500" },
+  { value: "IDENTITY", label: "Identities", icon: User, color: "text-cyan-500" },
 ];
 
 export function CategoryFilter() {
@@ -45,57 +39,44 @@ export function CategoryFilter() {
   };
 
   return (
-    <div style={{ width: 200, flexShrink: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-      <p style={{
-        fontSize: 12, fontWeight: 600, color: C.fgMuted,
-        textTransform: "uppercase", letterSpacing: "0.1em",
-        padding: "0 12px", marginBottom: 12
-      }}>
-        Categories
-      </p>
-      {categories.map((cat) => {
-        const count = getCategoryCount(cat.value);
-        const isActive = activeCategory === cat.value;
-        return (
-          <button
-            key={cat.value}
-            onClick={() => setActiveCategory(cat.value)}
-            style={{
-              width: "100%", display: "flex", alignItems: "center", gap: 10,
-              padding: "8px 12px", borderRadius: 8, fontSize: 14,
-              backgroundColor: isActive ? C.activeBg : "transparent",
-              color: isActive ? C.primary : C.fgMuted,
-              border: "none", cursor: "pointer", textAlign: "left",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.backgroundColor = C.hoverBg;
-                e.currentTarget.style.color = C.fg;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = C.fgMuted;
-              }
-            }}
-          >
-            <cat.icon size={16} color={isActive ? C.primary : cat.color} />
-            <span style={{ flex: 1, fontWeight: isActive ? 600 : 500 }}>{cat.label}</span>
-            {count > 0 && (
-              <span style={{
-                fontSize: 12, padding: "2px 8px", borderRadius: 999,
-                backgroundColor: isActive ? C.badgeActiveBg : C.badgeBg,
-                color: isActive ? C.primary : C.fgMuted,
-                fontWeight: 600
-              }}>
-                {count}
+    <div className="w-[240px] shrink-0 hidden lg:flex flex-col gap-4">
+      <Card className="flex-1 flex flex-col border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden p-3 gap-1">
+        <p className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+          Vault Categories
+        </p>
+        
+        {categories.map((cat) => {
+          const count = getCategoryCount(cat.value);
+          const isActive = activeCategory === cat.value;
+          return (
+            <Button
+              key={cat.value}
+              variant={isActive ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start h-10 px-3 gap-3 transition-all",
+                isActive ? "bg-primary/10 text-primary hover:bg-primary/15" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+              onClick={() => setActiveCategory(cat.value)}
+            >
+              <cat.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : cat.color)} />
+              <span className={cn("flex-1 text-sm truncate", isActive ? "font-semibold" : "font-medium")}>
+                {cat.label}
               </span>
-            )}
-          </button>
-        );
-      })}
+              {count > 0 && (
+                <Badge 
+                  variant={isActive ? "default" : "secondary"} 
+                  className={cn(
+                    "ml-auto text-[10px] h-5 min-w-[20px] px-1 justify-center rounded-full",
+                    isActive ? "bg-primary text-primary-foreground border-0" : "bg-muted text-muted-foreground border-0"
+                  )}
+                >
+                  {count}
+                </Badge>
+              )}
+            </Button>
+          );
+        })}
+      </Card>
     </div>
   );
 }

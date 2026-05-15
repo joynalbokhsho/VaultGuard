@@ -17,11 +17,24 @@ import {
   Edit2,
   ExternalLink,
   Check,
+  MoreVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCopyWithClear } from "@/hooks/useCopyWithClear";
 import { useVaultStore, type DecryptedEntry } from "@/store/vaultStore";
 import { EntryModal } from "./EntryModal";
+
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const typeIcons: Record<string, React.ElementType> = {
   CREDENTIAL: Globe,
@@ -32,24 +45,13 @@ const typeIcons: Record<string, React.ElementType> = {
   IDENTITY: User,
 };
 
-const typeColors: Record<string, { fg: string; bg: string }> = {
-  CREDENTIAL: { fg: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
-  NOTE: { fg: "#10b981", bg: "rgba(16,185,129,0.1)" },
-  CARD: { fg: "#ec4899", bg: "rgba(236,72,153,0.1)" },
-  API_KEY: { fg: "#f97316", bg: "rgba(249,115,22,0.1)" },
-  SSH_KEY: { fg: "#8b5cf6", bg: "rgba(139,92,246,0.1)" },
-  IDENTITY: { fg: "#06b6d4", bg: "rgba(6,182,212,0.1)" },
-};
-
-const C = {
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  ring: "rgba(124,58,237,0.3)",
-  accent: "rgba(255,255,255,0.06)",
-  destructive: "#ef4444",
-  destructiveBg: "rgba(239,68,68,0.1)",
+const typeColors: Record<string, string> = {
+  CREDENTIAL: "text-blue-500 bg-blue-500/10",
+  NOTE: "text-emerald-500 bg-emerald-500/10",
+  CARD: "text-pink-500 bg-pink-500/10",
+  API_KEY: "text-orange-500 bg-orange-500/10",
+  SSH_KEY: "text-purple-500 bg-purple-500/10",
+  IDENTITY: "text-cyan-500 bg-cyan-500/10",
 };
 
 interface EntryListProps {
@@ -69,10 +71,9 @@ function EntryCard({
   const [showEditModal, setShowEditModal] = useState(false);
   const { copy, isCopied } = useCopyWithClear();
   const { removeEntry, updateEntry } = useVaultStore();
-  const [isHovered, setIsHovered] = useState(false);
 
   const Icon = typeIcons[entry.type] ?? Globe;
-  const colors = typeColors[entry.type] ?? typeColors.CREDENTIAL;
+  const colorClass = typeColors[entry.type] ?? typeColors.CREDENTIAL;
 
   const handleDelete = async () => {
     if (!confirm(`Delete "${entry.data.title}"? This cannot be undone.`)) return;
@@ -93,7 +94,7 @@ function EntryCard({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          encryptedData: "placeholder", // Would re-encrypt in full implementation
+          encryptedData: "placeholder",
           iv: "placeholder",
           isFavorite: !entry.isFavorite,
         }),
@@ -106,149 +107,147 @@ function EntryCard({
     }
   };
 
-  const btnStyle = (hoverColor: string, hoverBg: string): React.CSSProperties => ({
-    width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-    color: C.fgMuted, background: "transparent", border: "none", cursor: "pointer", transition: "all 0.15s"
-  });
-
   return (
     <>
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        style={{
-          backgroundColor: C.bgCard,
-          border: `1px solid ${isHovered ? C.ring : C.border}`,
-          borderRadius: 12,
-          overflow: "hidden",
-          transition: "border-color 0.2s"
-        }}
-        className="group"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+      <Card 
+        className={cn(
+          "group border-border/40 hover:border-border transition-all duration-200 bg-card/40 backdrop-blur-sm overflow-hidden",
+          showDetails && "border-border shadow-md"
+        )}
       >
-        {/* Main row */}
         <div
-          style={{ display: "flex", alignItems: "center", gap: 16, padding: 16, cursor: "pointer" }}
+          className="flex items-center gap-4 p-3 sm:p-4 cursor-pointer"
           onClick={() => setShowDetails(!showDetails)}
         >
           {/* Icon */}
-          <div style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, backgroundColor: colors.bg, color: colors.fg }}>
-            <Icon size={20} />
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm", colorClass)}>
+            <Icon className="w-5 h-5" />
           </div>
 
           {/* Info */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-              <p style={{ fontWeight: 600, color: C.fg, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="font-semibold text-sm truncate max-w-[200px]">
                 {entry.data.title}
-              </p>
-              {entry.isFavorite && <Star size={14} color="#eab308" fill="#eab308" style={{ flexShrink: 0 }} />}
+              </span>
+              {entry.isFavorite && <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 shrink-0" />}
             </div>
-            <p style={{ fontSize: 12, color: C.fgMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <p className="text-xs text-muted-foreground truncate max-w-[240px]">
               {entry.data.username ?? entry.data.url ?? entry.data.service ?? ""}
             </p>
           </div>
 
-          {/* Quick actions */}
-          <div className="flex items-center gap-2 sm:gap-4 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-auto">
+          {/* Quick Actions (Desktop) */}
+          <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {entry.data.password && (
-              <button
-                id={`copy-password-${entry.id}`}
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={(e) => { e.stopPropagation(); copy(entry.data.password!, "Password"); }}
-                style={btnStyle(C.fg, C.accent)}
-                onMouseEnter={(e) => { e.currentTarget.style.color = C.fg; e.currentTarget.style.backgroundColor = C.accent; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = C.fgMuted; e.currentTarget.style.backgroundColor = "transparent"; }}
-                title="Copy password"
+                className="hover:text-primary"
               >
-                {isCopied ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
-              </button>
+                {isCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              </Button>
             )}
             {entry.data.url && (
-              <a
-                href={entry.data.url} target="_blank" rel="noopener noreferrer"
+              <a 
+                href={entry.data.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
                 onClick={(e) => e.stopPropagation()}
-                style={{ ...btnStyle(C.fg, C.accent), textDecoration: "none" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = C.fg; e.currentTarget.style.backgroundColor = C.accent; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = C.fgMuted; e.currentTarget.style.backgroundColor = "transparent"; }}
-                title="Open URL"
+                className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
               >
-                <ExternalLink size={16} />
+                <ExternalLink className="w-4 h-4" />
               </a>
             )}
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={(e) => { e.stopPropagation(); handleToggleFavorite(); }}
-              style={btnStyle("#eab308", "rgba(234,179,8,0.1)")}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#eab308"; e.currentTarget.style.backgroundColor = "rgba(234,179,8,0.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = entry.isFavorite ? "#eab308" : C.fgMuted; e.currentTarget.style.backgroundColor = "transparent"; }}
-              title={entry.isFavorite ? "Remove from favorites" : "Add to favorites"}
+              className={cn(entry.isFavorite ? "text-yellow-500" : "text-muted-foreground")}
             >
-              <Star size={16} color={entry.isFavorite ? "#eab308" : "inherit"} fill={entry.isFavorite ? "#eab308" : "none"} />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowEditModal(true); }}
-              style={btnStyle(C.fg, C.accent)}
-              onMouseEnter={(e) => { e.currentTarget.style.color = C.fg; e.currentTarget.style.backgroundColor = C.accent; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = C.fgMuted; e.currentTarget.style.backgroundColor = "transparent"; }}
-              title="Edit"
-            >
-              <Edit2 size={16} />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-              style={btnStyle(C.destructive, C.destructiveBg)}
-              onMouseEnter={(e) => { e.currentTarget.style.color = C.destructive; e.currentTarget.style.backgroundColor = C.destructiveBg; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = C.fgMuted; e.currentTarget.style.backgroundColor = "transparent"; }}
-              title="Delete"
-            >
-              <Trash2 size={16} />
-            </button>
+              <Star className={cn("w-4 h-4", entry.isFavorite && "fill-yellow-500")} />
+            </Button>
           </div>
+
+          {/* Menu (Mobile & Tablet) */}
+          <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "ml-auto")}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical className="w-4 h-4 text-muted-foreground" />
+          </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setShowDetails(!showDetails)}>
+                {showDetails ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                {showDetails ? "Hide details" : "View details"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleToggleFavorite}>
+                <Star className={cn("w-4 h-4 mr-2", entry.isFavorite && "fill-yellow-500 text-yellow-500")} />
+                {entry.isFavorite ? "Remove favorite" : "Add to favorite"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setShowEditModal(true)}>
+                <Edit2 className="w-4 h-4 mr-2" />
+                Edit entry
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete entry
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Expanded details */}
+        {/* Details Section */}
         <AnimatePresence>
           {showDetails && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              style={{ borderTop: `1px solid ${C.border}`, overflow: "hidden" }}
+              className="border-t border-border/50 bg-muted/20 overflow-hidden"
             >
-              <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="p-4 space-y-3">
                 {entry.data.username && (
                   <DetailRow label="Username" value={entry.data.username} copyable onCopy={() => copy(entry.data.username!, "Username")} />
                 )}
                 {entry.data.password && (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-16">
-                    <span style={{ fontSize: 12, fontWeight: 500, color: C.fgMuted, flexShrink: 0 }}>Password</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <span style={{ fontSize: 14, fontFamily: "monospace", color: C.fg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {showPassword ? entry.data.password : "•".repeat(Math.min(entry.data.password.length, 16))}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">Password</span>
+                    <div className="flex items-center gap-2 min-w-0 bg-background/50 px-2 py-1.5 rounded-md border border-border/30">
+                      <span className="text-sm font-mono truncate">
+                        {showPassword ? entry.data.password : "•".repeat(Math.min(entry.data.password.length, 12))}
                       </span>
-                      <button onClick={() => setShowPassword(!showPassword)} style={{ background: "none", border: "none", color: C.fgMuted, cursor: "pointer", display: "flex", padding: 0 }}>
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                      <button onClick={() => copy(entry.data.password!, "Password")} style={{ background: "none", border: "none", color: C.fgMuted, cursor: "pointer", display: "flex", padding: 0 }}>
-                        <Copy size={16} />
-                      </button>
+                      <div className="flex items-center gap-1 ml-auto shrink-0">
+                        <Button variant="ghost" size="icon-xs" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </Button>
+                        <Button variant="ghost" size="icon-xs" onClick={() => copy(entry.data.password!, "Password")}>
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
-                {entry.data.url && <DetailRow label="URL" value={entry.data.url} />}
-                {entry.data.content && <DetailRow label="Note" value={entry.data.content} />}
-                {entry.data.apiKey && (
-                  <DetailRow label="API Key" value={entry.data.apiKey} copyable secret onCopy={() => copy(entry.data.apiKey!, "API Key")} />
+                {entry.data.url && (
+                  <DetailRow label="URL" value={entry.data.url} />
                 )}
-                {entry.data.notes && <DetailRow label="Notes" value={entry.data.notes} />}
+                {entry.data.content && (
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Note Content</span>
+                    <div className="p-3 rounded-md bg-background/50 border border-border/30 text-sm leading-relaxed whitespace-pre-wrap">
+                      {entry.data.content}
+                    </div>
+                  </div>
+                )}
                 {entry.data.tags && entry.data.tags.length > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
                     {entry.data.tags.map((tag) => (
-                      <span key={tag} style={{ padding: "4px 10px", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.06)", fontSize: 12, color: C.fgMuted }}>
+                      <Badge key={tag} variant="secondary" className="text-[10px] py-0 h-5 bg-background/50 border-border/30">
                         {tag}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 )}
@@ -256,7 +255,7 @@ function EntryCard({
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </Card>
 
       <AnimatePresence>
         {showEditModal && (
@@ -279,22 +278,27 @@ function DetailRow({
 }) {
   const [show, setShow] = useState(!secret);
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-16">
-      <span style={{ fontSize: 12, fontWeight: 500, color: C.fgMuted, flexShrink: 0 }}>{label}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <span style={{ fontSize: 14, color: C.fg, fontFamily: secret ? "monospace" : "inherit", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4">
+      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">{label}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className={cn(
+          "text-sm truncate",
+          secret ? "font-mono" : "text-foreground/90"
+        )}>
           {secret && !show ? "•".repeat(8) : value}
         </span>
-        {secret && (
-          <button onClick={() => setShow(!show)} style={{ background: "none", border: "none", color: C.fgMuted, cursor: "pointer", display: "flex", padding: 0 }}>
-            {show ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        )}
-        {copyable && onCopy && (
-          <button onClick={onCopy} style={{ background: "none", border: "none", color: C.fgMuted, cursor: "pointer", display: "flex", padding: 0 }}>
-            <Copy size={16} />
-          </button>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {secret && (
+            <Button variant="ghost" size="icon-xs" onClick={() => setShow(!show)}>
+              {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </Button>
+          )}
+          {copyable && onCopy && (
+            <Button variant="ghost" size="icon-xs" onClick={onCopy}>
+              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -302,10 +306,19 @@ function DetailRow({
 
 export function EntryList({ entries, onRefresh }: EntryListProps) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1, overflowY: "auto", paddingRight: 4 }}>
+    <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 scrollbar-thin">
       <AnimatePresence mode="popLayout">
         {entries.map((entry) => (
-          <EntryCard key={entry.id} entry={entry} onRefresh={onRefresh} />
+          <motion.div
+            key={entry.id}
+            layout
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+          >
+            <EntryCard entry={entry} onRefresh={onRefresh} />
+          </motion.div>
         ))}
       </AnimatePresence>
     </div>

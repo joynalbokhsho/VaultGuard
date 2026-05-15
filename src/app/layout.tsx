@@ -1,7 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
+import { Geist, JetBrains_Mono } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geistSans = Geist({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -39,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
+    <html lang="en" suppressHydrationWarning className={cn("dark", geistSans.variable, jetbrainsMono.variable)}>
       <head>
         {/* Prevent FOUC: Set dark class before paint */}
         <script
@@ -61,33 +74,18 @@ export default function RootLayout({
             `,
           }}
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem={false}
           storageKey="vaultguard-theme"
         >
-          {children}
-          <Toaster
-            position="bottom-right"
-            theme="dark"
-            toastOptions={{
-              style: {
-                background: "rgb(17 17 32)",
-                color: "rgb(240 238 255)",
-                border: "1px solid rgb(40 38 65)",
-                fontFamily: "'Inter', system-ui, sans-serif",
-              },
-            }}
-          />
+          <TooltipProvider>
+            {children}
+            <Toaster position="bottom-right" closeButton richColors />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

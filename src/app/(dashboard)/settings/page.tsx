@@ -1,72 +1,86 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Shield, Monitor, LifeBuoy, ChevronRight, Key, Clock } from "lucide-react";
+import { Shield, ChevronRight, Key, Clock, Fingerprint, LogOut } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-const C = {
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  primary: "#7c3aed",
-  destructive: "#ef4444",
-  destructiveBg: "rgba(239,68,68,0.1)",
-  destructiveBorder: "rgba(239,68,68,0.3)",
-  accent: "rgba(255,255,255,0.06)",
-  muted: "rgba(255,255,255,0.03)",
-  input: "#1a1a2e",
-};
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
 
   return (
-    <div style={{ maxWidth: 672, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
-      <div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: C.fg }}>Settings</h1>
-        <p style={{ fontSize: 14, color: C.fgMuted, marginTop: 4 }}>
-          Manage your account and security preferences
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your account security and vault preferences
         </p>
       </div>
 
       {/* Account section */}
-      <Section title="Account" icon={<Key size={16} />}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyItems: "space-between", paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 14, fontWeight: 500, color: C.fg }}>Email</p>
-              <p style={{ fontSize: 14, color: C.fgMuted }}>{session?.user?.email}</p>
-            </div>
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Key className="w-4 h-4 text-primary" />
+            <CardTitle className="text-lg">Account</CardTitle>
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyItems: "space-between", paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 14, fontWeight: 500, color: C.fg }}>Name</p>
-              <p style={{ fontSize: 14, color: C.fgMuted }}>{session?.user?.name ?? "Not set"}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between py-2 border-b border-border/30">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">Email address</p>
+              <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
             </div>
-            <button style={{ background: "none", border: "none", color: C.primary, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Edit</button>
+            <Badge variant="outline" className="font-mono text-[10px]">VERIFIED</Badge>
           </div>
-        </div>
-      </Section>
+          <div className="flex items-center justify-between py-2 border-b border-border/30">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">Display Name</p>
+              <p className="text-sm text-muted-foreground">{session?.user?.name ?? "Not set"}</p>
+            </div>
+            <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10">
+              Edit
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Security section */}
-      <Section title="Security" icon={<Shield size={16} />}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" />
+            <CardTitle className="text-lg">Security</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
           <SettingsLink
             label="Two-Factor Authentication"
-            desc="Add an extra layer of security with TOTP"
+            desc="Add an extra layer of security with TOTP authenticator"
             href="/2fa"
           />
-          <div style={{ padding: 12, borderRadius: 8, backgroundColor: "transparent", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 500, color: C.fg }}>Passkeys</p>
-              <p style={{ fontSize: 12, color: C.fgMuted }}>Sign in with biometrics or a security key</p>
+          
+          <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/20">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">Passkeys</p>
+              <p className="text-xs text-muted-foreground">Sign in with biometrics or security keys</p>
             </div>
-            <button
+            <Button
+              size="sm"
               onClick={async () => {
                 try {
                   const { authClient } = await import("@/lib/auth/auth-client");
@@ -80,45 +94,63 @@ export default function SettingsPage() {
                   toast.error("An error occurred while adding passkey");
                 }
               }}
-              style={{ padding: "6px 12px", borderRadius: 8, backgroundColor: C.primary, color: "#fff", fontSize: 12, fontWeight: 500, border: "none", cursor: "pointer" }}
             >
+              <Fingerprint className="w-3.5 h-3.5 mr-2" />
               Add Passkey
-            </button>
+            </Button>
           </div>
+
           <SettingsLink
             label="Active Sessions"
-            desc="View and revoke active login sessions"
+            desc="View and manage devices currently logged into your account"
             href="/sessions"
           />
           <SettingsLink
             label="Recovery Center"
-            desc="Generate recovery codes and manage emergency access"
+            desc="Generate recovery codes and emergency access options"
             href="/recovery"
           />
-        </div>
-      </Section>
+        </CardContent>
+      </Card>
 
       {/* Vault section */}
-      <Section title="Vault" icon={<Clock size={16} />}>
-        <div style={{ padding: "8px 0" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyItems: "space-between" }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 14, fontWeight: 500, color: C.fg }}>Auto-lock timeout</p>
-              <p style={{ fontSize: 12, color: C.fgMuted }}>Lock vault after period of inactivity</p>
-            </div>
-            <select style={{ fontSize: 14, backgroundColor: C.input, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px", color: C.fg, outline: "none" }}>
-              <option value="5">5 minutes</option>
-              <option value="15" selected>15 minutes</option>
-              <option value="30">30 minutes</option>
-              <option value="60">1 hour</option>
-            </select>
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary" />
+            <CardTitle className="text-lg">Vault Behavior</CardTitle>
           </div>
-        </div>
-      </Section>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">Auto-lock timeout</p>
+              <p className="text-xs text-muted-foreground">Lock vault after period of inactivity</p>
+            </div>
+            <Select defaultValue="15">
+              <SelectTrigger className="w-[140px] h-9 bg-muted/30">
+                <SelectValue placeholder="Select timeout" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Danger zone */}
-      <Section title="Danger Zone" borderColor={C.destructiveBorder}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Card className="border-destructive/20 bg-destructive/5 backdrop-blur-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-destructive/10 bg-destructive/5">
+          <h2 className="text-sm font-bold text-destructive flex items-center gap-2">
+            <LogOut className="w-4 h-4" />
+            Danger Zone
+          </h2>
+        </div>
+        <CardContent className="p-0">
           <button
             onClick={async () => {
               if (confirm("Sign out of all devices?")) {
@@ -127,64 +159,45 @@ export default function SettingsPage() {
                 router.push("/login");
               }
             }}
-            style={{
-              width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyItems: "space-between",
-              padding: 12, borderRadius: 8, backgroundColor: "transparent", color: C.destructive, border: "none",
-              cursor: "pointer", transition: "background-color 0.15s"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.destructiveBg}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+            className="w-full text-left p-4 hover:bg-destructive/10 transition-colors group"
           >
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 14, fontWeight: 500 }}>Sign out all devices</p>
-              <p style={{ fontSize: 12, opacity: 0.7 }}>Revoke all active sessions</p>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <p className="text-sm font-bold text-destructive">Sign out of all devices</p>
+                <p className="text-xs text-destructive/70">Revoke all active sessions and force re-login</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-destructive opacity-50 group-hover:opacity-100 transition-opacity" />
             </div>
-            <ChevronRight size={16} />
           </button>
-        </div>
-      </Section>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function Section({
-  title, icon, children, borderColor,
-}: {
-  title: string; icon?: React.ReactNode; children: React.ReactNode; borderColor?: string;
-}) {
+function SettingsLink({ label, desc, href }: { label: string; desc: string; href: string }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{ borderRadius: 16, backgroundColor: C.bgCard, border: `1px solid ${borderColor || C.border}`, overflow: "hidden" }}
+    <Link
+      href={href}
+      className="flex items-center justify-between p-3 rounded-lg border border-transparent hover:border-border/50 hover:bg-muted/30 transition-all group"
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "16px 24px", borderBottom: `1px solid ${C.border}`, backgroundColor: C.muted }}>
-        <span style={{ color: C.primary, display: "flex" }}>{icon}</span>
-        <h2 style={{ fontWeight: 600, color: C.fg, fontSize: 14 }}>{title}</h2>
+      <div className="space-y-0.5">
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
       </div>
-      <div style={{ padding: "16px 24px" }}>{children}</div>
-    </motion.div>
+      <ChevronRight className="w-4 h-4 text-muted-foreground opacity-50 group-hover:opacity-100 transition-all" />
+    </Link>
   );
 }
 
-function SettingsLink({ label, desc, href }: { label: string; desc: string; href: string }) {
-  const router = useRouter();
+function Badge({ children, variant, className }: { children: React.ReactNode; variant?: "outline" | "default"; className?: string }) {
   return (
-    <button
-      onClick={() => router.push(href)}
-      style={{
-        width: "100%", display: "flex", alignItems: "center", justifyItems: "space-between",
-        padding: 12, borderRadius: 8, backgroundColor: "transparent", border: "none",
-        cursor: "pointer", transition: "background-color 0.15s", textAlign: "left"
-      }}
-      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.accent}
-      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-    >
-      <div style={{ flex: 1 }}>
-        <p style={{ fontSize: 14, fontWeight: 500, color: C.fg }}>{label}</p>
-        <p style={{ fontSize: 12, color: C.fgMuted }}>{desc}</p>
-      </div>
-      <ChevronRight size={16} color={C.fgMuted} />
-    </button>
+    <span className={cn(
+      "px-2 py-0.5 rounded text-[10px] font-bold",
+      variant === "outline" ? "border border-border/50 text-muted-foreground" : "bg-primary text-primary-foreground",
+      className
+    )}>
+      {children}
+    </span>
   );
 }

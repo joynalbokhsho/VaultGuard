@@ -11,26 +11,16 @@ import { toast } from "sonner";
 import { signIn, authClient } from "@/lib/auth/auth-client";
 import { loginSchema, type LoginInput } from "@/lib/validations/schemas";
 
-const C = {
-  bg: "#09090f",
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  input: "#1a1a2e",
-  primary: "#7c3aed",
-  primaryHover: "#6d28d9",
-  error: "#ef4444",
-  errorBg: "rgba(239,68,68,0.1)",
-  errorBorder: "rgba(239,68,68,0.2)",
-};
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [focused, setFocused] = useState<string | null>(null);
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [totpCode, setTotpCode] = useState("");
 
@@ -42,8 +32,16 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await (signIn as any).email({ email: data.email, password: data.password, callbackURL: "/vault" });
-      if (result.error) { setError(result.error.message ?? "Invalid email or password"); return; }
+      const result = await (signIn as any).email({ 
+        email: data.email, 
+        password: data.password, 
+        callbackURL: "/vault" 
+      });
+      
+      if (result.error) { 
+        setError(result.error.message ?? "Invalid email or password"); 
+        return; 
+      }
       
       if (result.data?.twoFactorRedirect) {
         setRequiresTwoFactor(true);
@@ -84,173 +82,184 @@ export function LoginForm() {
     }
   };
 
-  const inputStyle = (id: string): React.CSSProperties => ({
-    width: "100%",
-    padding: "10px 16px",
-    borderRadius: 8,
-    backgroundColor: C.input,
-    border: `1px solid ${focused === id ? C.primary : C.border}`,
-    color: C.fg,
-    fontSize: 14,
-    outline: "none",
-    fontFamily: "inherit",
-    boxShadow: focused === id ? `0 0 0 2px rgba(124,58,237,0.2)` : "none",
-    transition: "border-color 0.15s, box-shadow 0.15s",
-  });
-
   return (
-    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      {/* Card */}
-      <div className="p-6 md:p-8" style={{ backgroundColor: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 16, boxShadow: "0 25px 50px rgba(0,0,0,0.5)" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: C.primary, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <ShieldCheck size={28} color="#fff" />
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="w-full max-w-[400px]">
+      <Card className="border-border/50 shadow-xl bg-card/50 backdrop-blur-sm">
+        <CardHeader className="space-y-1 flex flex-col items-center">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
+            <ShieldCheck className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Welcome back</h1>
-          <p style={{ fontSize: 14, color: C.fgMuted }}>Sign in to access your encrypted vault</p>
+          <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Sign in to access your encrypted vault
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: "auto" }} 
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-3 py-2 rounded-md flex items-center gap-2 overflow-hidden"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {!requiresTwoFactor ? (
+              <motion.form 
+                key="login" 
+                onSubmit={handleSubmit(onSubmit)} 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email address</Label>
+                  <Input 
+                    id="login-email" 
+                    type="email" 
+                    placeholder="you@example.com"
+                    {...register("email")}
+                    className="bg-background/50"
+                  />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="login-password">Password</Label>
+                    <Link href="/forgot-password" size="sm" className="text-xs text-primary hover:underline font-medium">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Input 
+                      id="login-password" 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="••••••••"
+                      {...register("password")}
+                      className="bg-background/50 pr-10"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Sign in
+                </Button>
+              </motion.form>
+            ) : (
+              <motion.form 
+                key="2fa" 
+                onSubmit={onVerifyTwoFactor} 
+                initial={{ opacity: 0, x: 10 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                className="space-y-4"
+              >
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Enter the 6-digit code from your authenticator app.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="000000"
+                    className="text-center text-2xl tracking-[0.5em] font-mono h-14 bg-background/50"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setRequiresTwoFactor(false)}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-[2]"
+                    disabled={isLoading || totpCode.length !== 6}
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Verify
+                  </Button>
+                </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
+        </CardContent>
+
+        <div className="px-6">
+          <div className="relative flex items-center py-4">
+            <div className="flex-grow border-t border-border/50"></div>
+            <span className="flex-shrink mx-4 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">OR</span>
+            <div className="flex-grow border-t border-border/50"></div>
+          </div>
         </div>
 
-        {/* Error */}
-        <AnimatePresence>
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ marginBottom: 24, padding: "10px 14px", borderRadius: 8, backgroundColor: C.errorBg, border: `1px solid ${C.errorBorder}`, display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: C.error }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence mode="wait">
-          {!requiresTwoFactor ? (
-            <motion.form key="login" onSubmit={handleSubmit(onSubmit)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, position: "absolute", width: "100%" }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {/* Email */}
-              <div>
-                <label htmlFor="login-email" style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>
-                  Email address
-                </label>
-                <input id="login-email" type="email" autoComplete="email" placeholder="you@example.com"
-                  onFocus={() => setFocused("email")}
-                  style={inputStyle("email")} {...register("email", { onBlur: () => setFocused(null) })} />
-                {errors.email && <p style={{ fontSize: 12, color: C.error, marginTop: 4 }}>{errors.email.message}</p>}
-              </div>
-
-              {/* Password */}
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <label htmlFor="login-password" style={{ fontSize: 14, fontWeight: 500, color: C.fg }}>Password</label>
-                  <Link href="/forgot-password" style={{ fontSize: 12, color: C.primary, textDecoration: "none" }}>Forgot password?</Link>
-                </div>
-                <div style={{ position: "relative" }}>
-                  <input id="login-password" type={showPassword ? "text" : "password"} autoComplete="current-password"
-                    placeholder="Enter your password" onFocus={() => setFocused("password")}
-                    style={{ ...inputStyle("password"), paddingRight: 44 }} {...register("password", { onBlur: () => setFocused(null) })} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password"
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.fgMuted, display: "flex", padding: 0 }}>
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                {errors.password && <p style={{ fontSize: 12, color: C.error, marginTop: 4 }}>{errors.password.message}</p>}
-              </div>
-
-              {/* Submit */}
-              <button id="login-submit" type="submit" disabled={isLoading}
-                style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: isLoading ? C.primaryHover : C.primary, color: "#fff", fontWeight: 600, fontSize: 14, border: "none", cursor: isLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", opacity: isLoading ? 0.7 : 1, transition: "opacity 0.15s" }}>
-                {isLoading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />Signing in…</> : "Sign in"}
-              </button>
-            </motion.form>
-          ) : (
-            <motion.form key="2fa" onSubmit={onVerifyTwoFactor} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div style={{ textAlign: "center", marginBottom: 8 }}>
-                <p style={{ fontSize: 14, color: C.fgMuted }}>
-                  Enter the 6-digit code from your authenticator app to continue.
-                </p>
-              </div>
-
-              <div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={totpCode}
-                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="000000"
-                  autoFocus
-                  onFocus={() => setFocused("totp")}
-                  onBlur={() => setFocused(null)}
-                  style={{
-                    width: "100%", padding: "12px 16px", borderRadius: 8, backgroundColor: C.input,
-                    border: `1px solid ${focused === "totp" ? C.primary : C.border}`, color: C.fg, textAlign: "center",
-                    fontSize: 24, fontFamily: "monospace", letterSpacing: "1rem", outline: "none",
-                    boxShadow: focused === "totp" ? `0 0 0 2px ${C.primaryHover}40` : "none", transition: "all 0.15s"
-                  }}
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => setRequiresTwoFactor(false)}
-                  style={{ flex: 1, padding: "12px 0", borderRadius: 8, backgroundColor: "transparent", color: C.fgMuted, fontWeight: 600, fontSize: 14, border: `1px solid ${C.border}`, cursor: isLoading ? "not-allowed" : "pointer", transition: "all 0.15s" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading || totpCode.length !== 6}
-                  style={{ flex: 2, padding: "12px 0", borderRadius: 8, backgroundColor: C.primary, color: "#fff", fontWeight: 600, fontSize: 14, border: "none", cursor: (isLoading || totpCode.length !== 6) ? "not-allowed" : "pointer", opacity: (isLoading || totpCode.length !== 6) ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "opacity 0.15s" }}
-                >
-                  {isLoading ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : null}
-                  Verify
-                </button>
-              </div>
-            </motion.form>
-          )}
-        </AnimatePresence>
-
-        <div style={{ display: "flex", alignItems: "center", margin: "24px 0" }}>
-          <div style={{ flex: 1, height: 1, backgroundColor: C.border }} />
-          <span style={{ padding: "0 12px", fontSize: 12, color: C.fgMuted }}>OR</span>
-          <div style={{ flex: 1, height: 1, backgroundColor: C.border }} />
-        </div>
-
-        <button
-          onClick={async () => {
-            setIsLoading(true);
-            try {
-              const result = await signIn.passkey();
-              if (result?.error) {
-                setError(result.error.message ?? "Passkey login failed");
-              } else {
-                toast.success("Welcome back!");
-                router.push("/vault");
-                router.refresh();
+        <CardFooter className="flex flex-col gap-4">
+          <Button
+            variant="outline"
+            className="w-full bg-background/30"
+            disabled={isLoading}
+            onClick={async () => {
+              setIsLoading(true);
+              try {
+                const result = await signIn.passkey();
+                if (result?.error) {
+                  setError(result.error.message ?? "Passkey login failed");
+                } else {
+                  toast.success("Welcome back!");
+                  router.push("/vault");
+                  router.refresh();
+                }
+              } catch (err) {
+                setError("Passkey login failed. Please try again.");
+              } finally {
+                setIsLoading(false);
               }
-            } catch (err) {
-              setError("Passkey login failed. Please try again.");
-            } finally {
-              setIsLoading(false);
-            }
-          }}
-          disabled={isLoading}
-          style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "transparent", color: C.fg, fontWeight: 600, fontSize: 14, border: `1px solid ${C.border}`, cursor: isLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", transition: "background-color 0.15s" }}
-        >
-          <Fingerprint size={16} /> Sign in with Passkey
-        </button>
+            }}
+          >
+            <Fingerprint className="w-4 h-4 mr-2" />
+            Sign in with Passkey
+          </Button>
 
-        <p style={{ textAlign: "center", fontSize: 14, color: C.fgMuted, marginTop: 24 }}>
-          Don&apos;t have an account?{" "}
-          <Link href="/register" style={{ color: C.primary, fontWeight: 500, textDecoration: "none" }}>Create one free</Link>
-        </p>
+          <p className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="text-primary hover:underline font-medium">Create one free</Link>
+          </p>
+        </CardFooter>
+      </Card>
+
+      <div className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground/60">
+        <Lock className="w-3 h-3" />
+        <span>End-to-end encrypted · Zero-knowledge architecture</span>
       </div>
-
-      <p style={{ textAlign: "center", fontSize: 12, color: "#6b7280", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-        <Lock size={12} /> End-to-end encrypted · Your master password never leaves your device
-      </p>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </motion.div>
   );
 }

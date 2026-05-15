@@ -8,16 +8,9 @@ import { signOut } from "@/lib/auth/auth-client";
 import { useVaultStore } from "@/store/vaultStore";
 import { useRouter } from "next/navigation";
 
-const C = {
-  bg: "#0d0d1a",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  primary: "#8b5cf6",
-  hover: "#1a1a2e",
-  activeBg: "rgba(139,92,246,0.12)",
-  destructive: "#ef4444",
-};
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/vault",     label: "My Vault",         icon: Vault },
@@ -54,108 +47,142 @@ export function Sidebar({ user }: SidebarProps) {
       )}
 
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 md:relative transform transition-transform duration-200 flex flex-col h-[100dvh] overflow-hidden ${
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 md:relative transform transition-transform duration-200 flex flex-col h-[100dvh] overflow-hidden bg-card border-r border-border w-[260px]",
           isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
-        style={{ width: 260, minWidth: 260, borderRight: `1px solid ${C.border}`, backgroundColor: C.bg }}
+        )}
       >
         {/* Brand */}
-        <div style={{ height: 64, display: "flex", alignItems: "center", gap: 10, padding: "0 20px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: C.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <ShieldCheck size={18} color="#fff" />
+        <div className="h-16 flex items-center gap-3 px-5 border-b border-border shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/20">
+            <ShieldCheck className="w-5 h-5 text-primary-foreground" />
           </div>
-          <span style={{ fontWeight: 700, fontSize: 18, color: "#fff", flex: 1 }}>VaultGuard</span>
+          <span className="font-bold text-lg tracking-tight flex-1">VaultGuard</span>
           
-          <button 
-            className="md:hidden p-1 text-[rgb(var(--muted-foreground))] hover:text-white transition-colors" 
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden" 
             onClick={() => setMobileSidebar(false)}
-            aria-label="Close sidebar"
           >
-            <X size={20} />
-          </button>
+            <X className="w-5 h-5" />
+          </Button>
         </div>
 
-      {/* Vault status */}
-      <div style={{ padding: "12px 16px", flexShrink: 0 }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-          backgroundColor: isUnlocked ? "rgba(52,211,153,0.08)" : "rgba(255,255,255,0.04)",
-          border: `1px solid ${isUnlocked ? "rgba(52,211,153,0.2)" : C.border}`,
-          color: isUnlocked ? "#34d399" : C.fgMuted,
-        }}>
-          <div style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: isUnlocked ? "#34d399" : C.fgMuted }} />
-          <span style={{ flex: 1 }}>{isUnlocked ? "Vault unlocked" : "Vault locked"}</span>
-          {isUnlocked && (
-            <button onClick={lockVault} title="Lock vault"
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#34d399", display: "flex", padding: 0 }}>
-              <Lock size={13} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: "8px 12px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
-        {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <Link key={item.href} href={item.href}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 8, fontSize: 14, fontWeight: 500, textDecoration: "none", color: isActive ? C.primary : C.fgMuted, backgroundColor: isActive ? C.activeBg : "transparent", transition: "all 0.15s", position: "relative" }}>
-              {isActive && (
-                <motion.div layoutId="nav-active"
-                  style={{ position: "absolute", inset: 0, borderRadius: 8, backgroundColor: C.activeBg }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }} />
-              )}
-              <item.icon size={16} style={{ position: "relative", zIndex: 1 }} />
-              <span style={{ position: "relative", zIndex: 1 }}>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Admin Nav */}
-      {user.role === "admin" && (
-        <div style={{ marginTop: "auto", padding: "8px 12px", borderTop: `1px solid ${C.border}` }}>
-          <p style={{ padding: "8px 12px", fontSize: 11, fontWeight: 600, color: C.fgMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Administration</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {[
-              { href: "/admin", label: "Dashboard", icon: ShieldCheck },
-              { href: "/admin/users", label: "Users", icon: Monitor },
-              { href: "/admin/audit", label: "Audit Logs", icon: Shield },
-            ].map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
-                <Link key={item.href} href={item.href}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: "none", color: isActive ? C.primary : C.fgMuted, backgroundColor: isActive ? C.activeBg : "transparent", transition: "all 0.15s", position: "relative" }}>
-                  <item.icon size={15} style={{ position: "relative", zIndex: 1 }} />
-                  <span style={{ position: "relative", zIndex: 1 }}>{item.label}</span>
-                </Link>
-              );
-            })}
+        {/* Vault status */}
+        <div className="p-4 shrink-0">
+          <div className={cn(
+            "flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors",
+            isUnlocked 
+              ? "bg-green-500/5 border-green-500/20 text-green-500" 
+              : "bg-muted/30 border-border text-muted-foreground"
+          )}>
+            <div className={cn(
+              "w-1.5 h-1.5 rounded-full animate-pulse",
+              isUnlocked ? "bg-green-500" : "bg-muted-foreground/50"
+            )} />
+            <span className="flex-1">{isUnlocked ? "Vault unlocked" : "Vault locked"}</span>
+            {isUnlocked && (
+              <Button 
+                variant="ghost" 
+                size="icon-xs" 
+                className="h-5 w-5 text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                onClick={lockVault}
+                title="Lock vault"
+              >
+                <Lock className="w-3 h-3" />
+              </Button>
+            )}
           </div>
         </div>
-      )}
 
-      {/* User */}
-      <div style={{ borderTop: `1px solid ${C.border}`, padding: 16, flexShrink: 0, marginTop: user.role !== "admin" ? "auto" : 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: "rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: C.primary, flexShrink: 0 }}>
-            {(user.name ?? user.email)[0].toUpperCase()}
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-2 overflow-y-auto space-y-1">
+          {navItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={cn(
+                  "group flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all relative",
+                  isActive 
+                    ? "text-primary" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {isActive && (
+                  <motion.div 
+                    layoutId="nav-active"
+                    className="absolute inset-0 rounded-md bg-primary/10 -z-10"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }} 
+                  />
+                )}
+                <item.icon className={cn("w-4 h-4 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Admin Nav */}
+        {user.role === "admin" && (
+          <div className="mt-auto px-3 py-2 border-t border-border bg-muted/20">
+            <p className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Administration</p>
+            <div className="space-y-1">
+              {[
+                { href: "/admin", label: "Dashboard", icon: ShieldCheck },
+                { href: "/admin/users", label: "Users", icon: Monitor },
+                { href: "/admin/audit", label: "Audit Logs", icon: Shield },
+              ].map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link 
+                    key={item.href} 
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-colors",
+                      isActive 
+                        ? "text-primary bg-primary/5" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <item.icon className={cn("w-3.5 h-3.5", isActive ? "text-primary" : "text-muted-foreground")} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: C.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name ?? "User"}</p>
-            <p style={{ fontSize: 11, color: C.fgMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
+        )}
+
+        {/* User */}
+        <div className={cn(
+          "border-t border-border p-4 shrink-0 bg-background/50",
+          user.role !== "admin" && "mt-auto"
+        )}>
+          <div className="flex items-center gap-3 mb-3">
+            <Avatar className="w-8 h-8 rounded-lg">
+              <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold rounded-lg border border-primary/20">
+                {(user.name ?? user.email)[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold truncate leading-tight">{user.name ?? "User"}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+            </div>
           </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/5 h-9"
+            onClick={handleSignOut}
+          >
+            <LogOut className="w-3.5 h-3.5 mr-2" />
+            Sign out
+          </Button>
         </div>
-        <button onClick={handleSignOut}
-          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: C.fgMuted, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", transition: "color 0.15s" }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = C.destructive; e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.08)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = C.fgMuted; e.currentTarget.style.backgroundColor = "transparent"; }}>
-          <LogOut size={15} />
-          Sign out
-        </button>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }

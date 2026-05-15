@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Monitor, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface SessionInfo {
   id: string;
@@ -12,20 +16,6 @@ interface SessionInfo {
   createdAt: string;
   expiresAt: string;
 }
-
-const C = {
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  primary: "#7c3aed",
-  primaryBg: "rgba(124,58,237,0.1)",
-  destructive: "#ef4444",
-  destructiveBg: "rgba(239,68,68,0.1)",
-  destructiveHover: "rgba(239,68,68,0.2)",
-  success: "#10b981",
-  successBg: "rgba(16,185,129,0.1)",
-};
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
@@ -51,69 +41,64 @@ export default function SessionsPage() {
   };
 
   return (
-    <div style={{ maxWidth: 672, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.fg }}>Active Sessions</h1>
-          <p style={{ fontSize: 14, color: C.fgMuted, marginTop: 4 }}>
-            Manage your active login sessions
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Active Sessions</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your active login sessions across all devices
           </p>
         </div>
-        <button
+        <Button
+          variant="destructive"
           onClick={revokeAll}
           disabled={isRevoking || sessions.length <= 1}
-          style={{
-            display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 8,
-            backgroundColor: C.destructiveBg, color: C.destructive, fontSize: 14, fontWeight: 500,
-            border: "none", cursor: (isRevoking || sessions.length <= 1) ? "not-allowed" : "pointer",
-            opacity: (isRevoking || sessions.length <= 1) ? 0.5 : 1, transition: "background-color 0.15s"
-          }}
-          onMouseEnter={(e) => { if (!isRevoking && sessions.length > 1) e.currentTarget.style.backgroundColor = C.destructiveHover; }}
-          onMouseLeave={(e) => { if (!isRevoking && sessions.length > 1) e.currentTarget.style.backgroundColor = C.destructiveBg; }}
+          className="shadow-lg shadow-destructive/10"
         >
-          {isRevoking ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={16} />}
+          {isRevoking ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
           Revoke all others
-        </button>
+        </Button>
       </div>
 
       {isLoading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
-          <Loader2 size={32} color={C.primary} style={{ animation: "spin 1s linear infinite" }} />
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="space-y-3">
           {sessions.map((session, i) => (
             <motion.div
               key={session.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              style={{
-                padding: 16, borderRadius: 12, backgroundColor: C.bgCard, border: `1px solid ${C.border}`,
-                display: "flex", alignItems: "center", gap: 16
-              }}
             >
-              <div style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: C.primaryBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Monitor size={20} color={C.primary} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 14, fontWeight: 500, color: C.fg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {session.userAgent?.split("(")[0]?.trim() ?? "Unknown device"}
-                  {i === 0 && (
-                    <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 6px", borderRadius: 999, backgroundColor: C.successBg, color: C.success, fontWeight: 500 }}>
-                      Current
-                    </span>
-                  )}
-                </p>
-                <p style={{ fontSize: 12, color: C.fgMuted }}>
-                  IP: {session.ipAddress ?? "Unknown"} · Created: {new Date(session.createdAt).toLocaleDateString()}
-                </p>
-              </div>
+              <Card className="border-border/50 bg-card/50 backdrop-blur-sm transition-all hover:border-primary/20">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Monitor className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {session.userAgent?.split("(")[0]?.trim() ?? "Unknown device"}
+                      </p>
+                      {i === 0 && (
+                        <Badge variant="secondary" className="bg-green-500/10 text-green-500 hover:bg-green-500/10 border-green-500/20 text-[10px] h-4 px-1.5 font-bold uppercase tracking-wider">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      IP: {session.ipAddress ?? "Unknown"} · Created: {new Date(session.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </div>
       )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

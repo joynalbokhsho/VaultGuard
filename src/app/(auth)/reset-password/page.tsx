@@ -7,12 +7,11 @@ import Link from "next/link";
 import { ShieldCheck, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { authClient } from "@/lib/auth/auth-client";
 
-const C = {
-  bg: "#09090f", bgCard: "#111120", fg: "#f0eeff",
-  fgMuted: "#9c99bc", border: "#282840", input: "#1a1a2e",
-  primary: "#7c3aed", error: "#ef4444",
-  errorBg: "rgba(239,68,68,0.1)", errorBorder: "rgba(239,68,68,0.2)",
-};
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -25,7 +24,6 @@ function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [focused, setFocused] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) setError("Invalid or expired reset link. Please request a new one.");
@@ -50,89 +48,120 @@ function ResetPasswordForm() {
     }
   };
 
-  const inputStyle = (id: string): React.CSSProperties => ({
-    width: "100%", padding: "10px 16px", borderRadius: 8,
-    backgroundColor: C.input, border: `1px solid ${focused === id ? C.primary : C.border}`,
-    color: C.fg, fontSize: 14, outline: "none", fontFamily: "inherit",
-    boxShadow: focused === id ? "0 0 0 2px rgba(124,58,237,0.2)" : "none",
-    transition: "border-color 0.15s, box-shadow 0.15s", boxSizing: "border-box",
-  });
-
   return (
-    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <div className="p-6 md:p-8" style={{ backgroundColor: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 16, boxShadow: "0 25px 50px rgba(0,0,0,0.5)" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: C.primary, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <ShieldCheck size={28} color="#fff" />
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ duration: 0.3 }}
+      className="w-full max-w-[400px]"
+    >
+      <Card className="border-border/50 shadow-xl bg-card/50 backdrop-blur-sm">
+        <CardHeader className="space-y-1 flex flex-col items-center">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
+            <ShieldCheck className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Set new password</h1>
-          <p style={{ fontSize: 14, color: C.fgMuted }}>Choose a strong password for your account.</p>
-        </div>
+          <CardTitle className="text-2xl font-bold tracking-tight text-center">Set new password</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            {done ? "Your password has been reset." : "Choose a strong password for your account."}
+          </CardDescription>
+        </CardHeader>
 
-        <AnimatePresence>
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ marginBottom: 20, padding: "10px 14px", borderRadius: 8, backgroundColor: C.errorBg, border: `1px solid ${C.errorBorder}`, display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: C.error }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <CardContent>
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: "auto" }} 
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-3 py-2 rounded-md flex items-center gap-2 overflow-hidden mb-4"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {done ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: "center", padding: "24px 16px" }}>
-            <div style={{ width: 52, height: 52, borderRadius: "50%", backgroundColor: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <CheckCircle size={26} color="#10b981" />
-            </div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 8 }}>Password reset!</p>
-            <p style={{ fontSize: 13, color: C.fgMuted }}>Redirecting you to sign in…</p>
-          </motion.div>
-        ) : (
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* New password */}
-            <div>
-              <label htmlFor="new-password" style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>New password</label>
-              <div style={{ position: "relative" }}>
-                <input id="new-password" type={showPw ? "text" : "password"} placeholder="Min. 8 characters"
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setFocused("pw")} onBlur={() => setFocused(null)}
-                  style={{ ...inputStyle("pw"), paddingRight: 44 }} />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.fgMuted, display: "flex", padding: 0 }}>
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+          {done ? (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center space-y-4 py-4"
+            >
+              <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
-            </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Success!</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Redirecting you to sign in...
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New password</Label>
+                <div className="relative">
+                  <Input 
+                    id="new-password" 
+                    type={showPw ? "text" : "password"} 
+                    placeholder="Min. 8 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pr-10 bg-background/50"
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  >
+                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
 
-            {/* Confirm */}
-            <div>
-              <label htmlFor="confirm-password" style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 6 }}>Confirm password</label>
-              <input id="confirm-password" type="password" placeholder="Re-enter new password"
-                value={confirm} onChange={(e) => setConfirm(e.target.value)}
-                onFocus={() => setFocused("confirm")} onBlur={() => setFocused(null)}
-                style={inputStyle("confirm")} />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm password</Label>
+                <Input 
+                  id="confirm-password" 
+                  type="password" 
+                  placeholder="Re-enter new password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  className="bg-background/50"
+                  required
+                />
+              </div>
 
-            <button type="submit" disabled={isLoading || !token}
-              style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: C.primary, color: "#fff", fontWeight: 600, fontSize: 14, border: "none", cursor: (isLoading || !token) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", opacity: isLoading || !token ? 0.7 : 1, transition: "opacity 0.15s" }}>
-              {isLoading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />Resetting…</> : "Reset password"}
-            </button>
-          </form>
-        )}
+              <Button type="submit" className="w-full" disabled={isLoading || !token}>
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {isLoading ? "Resetting..." : "Reset password"}
+              </Button>
+            </form>
+          )}
+        </CardContent>
 
-        <p style={{ textAlign: "center", fontSize: 14, color: C.fgMuted, marginTop: 24 }}>
-          <Link href="/forgot-password" style={{ color: C.primary, fontWeight: 500, textDecoration: "none" }}>Request a new reset link</Link>
-        </p>
-      </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <CardFooter className="flex justify-center border-t border-border/30 pt-6">
+          <Link 
+            href="/forgot-password"
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-muted-foreground hover:text-foreground")}
+          >
+            Request a new reset link
+          </Link>
+        </CardFooter>
+      </Card>
     </motion.div>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
       <ResetPasswordForm />
     </Suspense>
   );

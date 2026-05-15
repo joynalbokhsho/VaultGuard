@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 
 export default function GeneratorPage() {
   return (
-    <div style={{ maxWidth: 672, margin: "0 auto" }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f0eeff" }}>Password Generator</h1>
-        <p style={{ fontSize: 14, color: "#9c99bc", marginTop: 4 }}>
-          Generate cryptographically secure passwords
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Password Generator</h1>
+        <p className="text-sm text-muted-foreground">
+          Generate cryptographically secure passwords and passphrases
         </p>
       </div>
       <PasswordGenerator />

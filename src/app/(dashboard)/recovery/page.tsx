@@ -2,23 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LifeBuoy, Copy, RefreshCcw, AlertCircle, CheckCircle, Download } from "lucide-react";
+import { LifeBuoy, Copy, RefreshCcw, AlertCircle, CheckCircle, Download, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useCopyWithClear } from "@/hooks/useCopyWithClear";
 
-const C = {
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  primary: "#7c3aed",
-  warning: "#eab308",
-  warningBg: "rgba(234,179,8,0.1)",
-  warningBorder: "rgba(234,179,8,0.2)",
-  success: "#10b981",
-  muted: "rgba(255,255,255,0.03)",
-  accent: "rgba(255,255,255,0.06)",
-};
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function RecoveryPage() {
   const [codes, setCodes] = useState<string[]>([]);
@@ -54,113 +45,102 @@ export default function RecoveryPage() {
   };
 
   return (
-    <div style={{ maxWidth: 672, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
-      <div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: C.fg }}>Recovery Center</h1>
-        <p style={{ fontSize: 14, color: C.fgMuted, marginTop: 4 }}>
-          Manage emergency access and recovery options
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Recovery Center</h1>
+        <p className="text-sm text-muted-foreground">
+          Emergency access options for your account
         </p>
       </div>
 
-      {/* Recovery codes */}
-      <div style={{ borderRadius: 16, backgroundColor: C.bgCard, border: `1px solid ${C.border}`, overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "16px 24px", borderBottom: `1px solid ${C.border}`, backgroundColor: C.muted }}>
-          <LifeBuoy size={16} color={C.primary} />
-          <h2 style={{ fontWeight: 600, color: C.fg, fontSize: 14 }}>Recovery Codes</h2>
-        </div>
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="pb-4 bg-muted/20 border-b border-border/30">
+          <div className="flex items-center gap-2">
+            <LifeBuoy className="w-4 h-4 text-primary" />
+            <CardTitle className="text-lg">Recovery Codes</CardTitle>
+          </div>
+        </CardHeader>
 
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-          <p style={{ fontSize: 14, color: C.fgMuted }}>
-            Recovery codes are one-time use codes that let you access your account if you lose access to your authenticator app. Each code can only be used once.
-          </p>
+        <CardContent className="pt-6 space-y-6">
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Recovery codes are one-time use credentials that allow you to access your account if you lose your authenticator app. Keep these in a separate, secure location.
+            </p>
 
-          <div style={{ padding: 12, borderRadius: 8, backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}`, display: "flex", alignItems: "flex-start", gap: 8, fontSize: 14, color: C.warning }}>
-            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
-            <span>
-              Keep these codes somewhere safe. Generating new codes will invalidate all previous codes.
-            </span>
+            <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/10 flex gap-4 text-sm text-orange-500/80 leading-relaxed">
+              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-orange-500" />
+              <p>
+                <strong className="text-orange-500">Security Warning:</strong> Generating new codes will immediately invalidate all previously issued recovery codes.
+              </p>
+            </div>
           </div>
 
-          <button
-            id="generate-recovery-btn"
-            onClick={generateCodes}
-            disabled={isLoading}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 8,
-              backgroundColor: C.primary, color: "#fff", fontSize: 14, fontWeight: 600, border: "none",
-              cursor: isLoading ? "not-allowed" : "pointer", opacity: isLoading ? 0.5 : 1, transition: "opacity 0.15s",
-              alignSelf: "flex-start"
-            }}
-            onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.opacity = "0.9"; }}
-            onMouseLeave={(e) => { if (!isLoading) e.currentTarget.style.opacity = "1"; }}
-          >
-            <RefreshCcw size={16} style={{ animation: isLoading ? "spin 1s linear infinite" : "none" }} />
-            {generated ? "Regenerate codes" : "Generate recovery codes"}
-          </button>
+          <div className="flex justify-center sm:justify-start pt-2">
+            <Button
+              onClick={generateCodes}
+              disabled={isLoading}
+              size="lg"
+              className={cn(
+                "font-bold transition-all",
+                generated ? "variant-outline" : "shadow-lg shadow-primary/20"
+              )}
+            >
+              <RefreshCcw className={cn("w-4 h-4 mr-2", isLoading && "animate-spin")} />
+              {generated ? "Regenerate codes" : "Generate recovery codes"}
+            </Button>
+          </div>
 
           <AnimatePresence>
             {codes.length > 0 && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                style={{ display: "flex", flexDirection: "column", gap: 12, overflow: "hidden" }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6 pt-6 border-t border-border/30"
               >
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {codes.map((code) => (
-                    <div key={code} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px", borderRadius: 8, backgroundColor: C.muted, border: `1px solid ${C.border}` }}>
-                      <code style={{ flex: 1, fontSize: 14, fontFamily: "monospace", color: C.fg }}>{code}</code>
-                      <button
+                    <div key={code} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/50 group hover:border-primary/20 transition-all">
+                      <code className="text-sm font-mono font-bold text-foreground">{code}</code>
+                      <Button 
+                        variant="ghost" 
+                        size="icon-sm" 
                         onClick={() => copy(code, "Recovery code")}
-                        style={{ background: "none", border: "none", color: C.fgMuted, cursor: "pointer", display: "flex", padding: 0 }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = C.fg}
-                        onMouseLeave={(e) => e.currentTarget.style.color = C.fgMuted}
+                        className="opacity-50 group-hover:opacity-100 transition-opacity"
                       >
-                        <Copy size={14} />
-                      </button>
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <Button
+                    variant="outline"
                     onClick={downloadCodes}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 8,
-                      border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.fg, fontSize: 14,
-                      fontWeight: 500, cursor: "pointer", transition: "background-color 0.15s"
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.accent}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    className="flex-1 font-semibold"
                   >
-                    <Download size={16} />
-                    Download as text file
-                  </button>
-                  <button
+                    <Download className="w-4 h-4 mr-2" />
+                    Download as text
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => copy(codes.join("\n"), "All recovery codes")}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 8,
-                      border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.fg, fontSize: 14,
-                      fontWeight: 500, cursor: "pointer", transition: "background-color 0.15s"
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.accent}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    className="flex-1 font-semibold"
                   >
-                    <Copy size={16} />
-                    Copy all
-                  </button>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy all codes
+                  </Button>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.success }}>
-                  <CheckCircle size={14} />
-                  8 codes generated — save them before leaving this page
+                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-green-500/5 border border-green-500/10 text-[10px] font-bold text-green-500 uppercase tracking-widest mx-auto w-fit">
+                  <CheckCircle className="w-3 h-3" />
+                  Successfully generated 8 codes
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </CardContent>
+      </Card>
     </div>
   );
 }

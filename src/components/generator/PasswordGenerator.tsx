@@ -89,16 +89,16 @@ function generateSecurePassword(opts: GeneratorOptions): string {
 const strengthLabels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
 const strengthColors = ["#ef4444", "#f97316", "#eab308", "#10b981", "#3b82f6"];
 
-const C = {
-  bgCard: "#111120",
-  fg: "#f0eeff",
-  fgMuted: "#9c99bc",
-  border: "#282840",
-  primary: "#7c3aed",
-  primaryHover: "#6d28d9",
-  primaryBg: "rgba(124,58,237,0.1)",
-  mutedBg: "rgba(255,255,255,0.06)",
-};
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+// ... (keep constants)
 
 export function PasswordGenerator() {
   const [options, setOptions] = useState<GeneratorOptions>({
@@ -134,202 +134,178 @@ export function PasswordGenerator() {
   const score = strength?.score ?? 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Password display */}
-      <div style={{ borderRadius: 16, backgroundColor: C.bgCard, border: `1px solid ${C.border}`, padding: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <div
-            id="generated-password"
-            style={{
-              flex: 1, minWidth: 0, fontFamily: "monospace", fontSize: 18, color: C.fg,
-              backgroundColor: C.mutedBg, borderRadius: 8, padding: "12px 16px",
-              overflowX: "auto", whiteSpace: "nowrap", userSelect: "all"
-            }}
-          >
-            {password}
-          </div>
-        </div>
-
-        {/* Strength bar */}
-        {strength && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: C.fgMuted }}>Strength</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: strengthColors[score] }}>
-                {strengthLabels[score]}
-              </span>
+    <div className="flex flex-col gap-6">
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardContent className="pt-6">
+          <div className="relative group">
+            <div className="font-mono text-xl md:text-2xl break-all p-6 rounded-xl bg-muted/30 border border-border/50 min-h-[4rem] flex items-center justify-center text-center selection:bg-primary/20 selection:text-primary transition-all group-hover:border-primary/20">
+              {password}
             </div>
-            <div style={{ display: "flex", gap: 4 }}>
-              {[0, 1, 2, 3, 4].map((i) => (
-                <motion.div
-                  key={i}
-                  style={{
-                    height: 6, flex: 1, borderRadius: 999, transition: "background-color 0.3s",
-                    backgroundColor: i <= score ? strengthColors[score] : C.border
-                  }}
+          </div>
+
+          {strength && (
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Strength</span>
+                <Badge variant={score >= 3 ? "default" : score >= 2 ? "secondary" : "destructive"} className="font-bold">
+                  {strengthLabels[score]}
+                </Badge>
+              </div>
+              <Progress 
+                value={(score + 1) * 20} 
+                className={cn(
+                  "h-1.5",
+                  score <= 1 ? "[&>[data-slot=progress-indicator]]:bg-destructive" : 
+                  score === 2 ? "[&>[data-slot=progress-indicator]]:bg-orange-500" : 
+                  "[&>[data-slot=progress-indicator]]:bg-green-500"
+                )} 
+              />
+              {strength.feedback.suggestions.length > 0 && (
+                <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
+                  <span className="text-primary opacity-70">💡</span> {strength.feedback.suggestions[0]}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 mt-8">
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 font-semibold transition-all hover:bg-muted/50"
+              onClick={() => copy(password, "Password")}
+            >
+              {isCopied ? (
+                <><Check className="w-4 h-4 mr-2 text-green-500" /> Copied!</>
+              ) : (
+                <><Copy className="w-4 h-4 mr-2" /> Copy</>
+              )}
+            </Button>
+            <Button
+              size="lg"
+              className="h-12 font-bold shadow-lg shadow-primary/20"
+              onClick={generate}
+            >
+              <RefreshCcw className="w-4 h-4 mr-2" />
+              Regenerate
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-primary" />
+            <CardTitle className="text-lg">Generator Options</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-border/30">
+            <div className="space-y-0.5">
+              <Label htmlFor="opt-passphrase" className="text-base font-semibold">Memorable passphrase</Label>
+              <p className="text-xs text-muted-foreground">e.g. apple-brave-cloud-dance</p>
+            </div>
+            <Switch
+              id="opt-passphrase"
+              checked={options.passphrase}
+              onCheckedChange={() => toggle("passphrase")}
+            />
+          </div>
+
+          {options.passphrase ? (
+            <div className="space-y-6 px-1">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Word count</Label>
+                  <Badge variant="outline" className="font-mono text-sm">{options.wordCount}</Badge>
+                </div>
+                <Slider
+                  min={3}
+                  max={10}
+                  step={1}
+                  value={[options.wordCount]}
+                  onValueChange={([val]) => setOptions((o) => ({ ...o, wordCount: val }))}
                 />
-              ))}
-            </div>
-            {strength.feedback.suggestions.length > 0 && (
-              <p style={{ fontSize: 12, color: C.fgMuted, marginTop: 8 }}>
-                💡 {strength.feedback.suggestions[0]}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Actions */}
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            id="copy-password-btn"
-            onClick={() => copy(password, "Password")}
-            style={{
-              flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "10px 0", borderRadius: 8, border: `1px solid ${C.border}`, backgroundColor: "transparent",
-              color: C.fg, fontSize: 14, fontWeight: 500, cursor: "pointer", transition: "background-color 0.15s"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.mutedBg}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-          >
-            {isCopied ? (
-              <><Check size={16} color="#10b981" /> Copied!</>
-            ) : (
-              <><Copy size={16} /> Copy</>
-            )}
-          </button>
-          <button
-            id="regenerate-btn"
-            onClick={generate}
-            style={{
-              flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "10px 0", borderRadius: 8, backgroundColor: C.primary, color: "#fff",
-              fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer", transition: "opacity 0.15s"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-          >
-            <RefreshCcw size={16} />
-            Regenerate
-          </button>
-        </div>
-      </div>
-
-      {/* Options */}
-      <div style={{ borderRadius: 16, backgroundColor: C.bgCard, border: `1px solid ${C.border}`, padding: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-          <Sliders size={16} color={C.primary} />
-          <h3 style={{ fontWeight: 600, color: C.fg }}>Options</h3>
-        </div>
-
-        {/* Passphrase toggle */}
-        <ToggleOption
-          id="opt-passphrase"
-          label="Memorable passphrase"
-          description="e.g. apple-brave-cloud-dance"
-          checked={options.passphrase}
-          onChange={() => toggle("passphrase")}
-        />
-
-        {options.passphrase ? (
-          <>
-            <div style={{ marginTop: 16 }}>
-              <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 8 }}>
-                Word count: {options.wordCount}
-              </label>
-              <input
-                id="word-count-slider"
-                type="range"
-                min={3}
-                max={10}
-                value={options.wordCount}
-                onChange={(e) => setOptions((o) => ({ ...o, wordCount: parseInt(e.target.value) }))}
-                style={{ width: "100%", accentColor: C.primary }}
-              />
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 8 }}>Separator</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                {["-", "_", ".", " ", ""].map((sep) => (
-                  <button
-                    key={sep}
-                    onClick={() => setOptions((o) => ({ ...o, wordSeparator: sep }))}
-                    style={{
-                      padding: "6px 12px", borderRadius: 8, fontSize: 14, cursor: "pointer", transition: "all 0.15s",
-                      border: `1px solid ${options.wordSeparator === sep ? C.primary : C.border}`,
-                      backgroundColor: options.wordSeparator === sep ? C.primaryBg : "transparent",
-                      color: options.wordSeparator === sep ? C.primary : C.fgMuted
-                    }}
-                  >
-                    {sep === "" ? "none" : sep === " " ? "space" : sep}
-                  </button>
-                ))}
+              </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Separator</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["-", "_", ".", " ", ""].map((sep) => (
+                    <Button
+                      key={sep}
+                      variant={options.wordSeparator === sep ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 font-mono"
+                      onClick={() => setOptions((o) => ({ ...o, wordSeparator: sep }))}
+                    >
+                      {sep === "" ? "none" : sep === " " ? "space" : sep}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
-          </>
-        ) : (
-          <>
-            <div style={{ marginTop: 16 }}>
-              <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: C.fg, marginBottom: 8 }}>
-                Length: {options.length}
-              </label>
-              <input
-                id="length-slider"
-                type="range"
-                min={8}
-                max={128}
-                value={options.length}
-                onChange={(e) => setOptions((o) => ({ ...o, length: parseInt(e.target.value) }))}
-                style={{ width: "100%", accentColor: C.primary }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.fgMuted, marginTop: 4 }}>
-                <span>8</span>
-                <span>128</span>
+          ) : (
+            <div className="space-y-6 px-1">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Password Length</Label>
+                  <Badge variant="outline" className="font-mono text-sm">{options.length}</Badge>
+                </div>
+                <Slider
+                  min={8}
+                  max={128}
+                  step={1}
+                  value={[options.length]}
+                  onValueChange={([val]) => setOptions((o) => ({ ...o, length: val }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 pt-2">
+                <OptionItem 
+                  label="Uppercase (A-Z)" 
+                  checked={options.uppercase} 
+                  onCheckedChange={() => toggle("uppercase")} 
+                />
+                <OptionItem 
+                  label="Lowercase (a-z)" 
+                  checked={options.lowercase} 
+                  onCheckedChange={() => toggle("lowercase")} 
+                />
+                <OptionItem 
+                  label="Numbers (0-9)" 
+                  checked={options.numbers} 
+                  onCheckedChange={() => toggle("numbers")} 
+                />
+                <OptionItem 
+                  label="Symbols (!@#$%^&*)" 
+                  checked={options.symbols} 
+                  onCheckedChange={() => toggle("symbols")} 
+                />
+                <OptionItem 
+                  label="Exclude Ambiguous" 
+                  desc="(0, O, l, I)"
+                  checked={options.excludeAmbiguous} 
+                  onCheckedChange={() => toggle("excludeAmbiguous")} 
+                />
               </div>
             </div>
-
-            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-              <ToggleOption id="opt-uppercase" label="Uppercase letters (A-Z)" checked={options.uppercase} onChange={() => toggle("uppercase")} />
-              <ToggleOption id="opt-lowercase" label="Lowercase letters (a-z)" checked={options.lowercase} onChange={() => toggle("lowercase")} />
-              <ToggleOption id="opt-numbers" label="Numbers (0-9)" checked={options.numbers} onChange={() => toggle("numbers")} />
-              <ToggleOption id="opt-symbols" label="Symbols (!@#$%^&*)" checked={options.symbols} onChange={() => toggle("symbols")} />
-              <ToggleOption id="opt-ambiguous" label="Exclude ambiguous characters (0, O, l, I)" checked={options.excludeAmbiguous} onChange={() => toggle("excludeAmbiguous")} />
-            </div>
-          </>
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function ToggleOption({
-  id, label, description, checked, onChange,
-}: {
-  id: string; label: string; description?: string; checked: boolean; onChange: () => void;
-}) {
+function OptionItem({ label, desc, checked, onCheckedChange }: { label: string; desc?: string; checked: boolean; onCheckedChange: () => void }) {
   return (
-    <label htmlFor={id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-      <div>
-        <p style={{ fontSize: 14, fontWeight: 500, color: C.fg, transition: "color 0.15s" }}>
-          {label}
-        </p>
-        {description && <p style={{ fontSize: 12, color: C.fgMuted }}>{description}</p>}
+    <div className="flex items-center justify-between gap-4">
+      <div className="space-y-0.5">
+        <Label className="text-sm font-medium cursor-pointer" onClick={onCheckedChange}>{label}</Label>
+        {desc && <p className="text-[10px] text-muted-foreground font-mono">{desc}</p>}
       </div>
-      <div
-        style={{
-          position: "relative", width: 44, height: 24, borderRadius: 999, transition: "background-color 0.2s",
-          backgroundColor: checked ? C.primary : C.border
-        }}
-        onClick={onChange}
-      >
-        <div
-          id={id}
-          style={{
-            position: "absolute", top: 2, left: 2, width: 20, height: 20, borderRadius: "50%",
-            backgroundColor: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", transition: "transform 0.2s",
-            transform: checked ? "translateX(20px)" : "translateX(0)"
-          }}
-        />
-      </div>
-    </label>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
   );
 }
+
