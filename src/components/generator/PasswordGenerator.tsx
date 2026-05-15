@@ -225,7 +225,10 @@ export function PasswordGenerator() {
                   max={10}
                   step={1}
                   value={[options.wordCount]}
-                  onValueChange={([val]) => setOptions((o) => ({ ...o, wordCount: val }))}
+                  onValueChange={(v) => {
+                    const val = Array.isArray(v) ? v[0] : v;
+                    setOptions((o) => ({ ...o, wordCount: val }));
+                  }}
                 />
               </div>
               <div className="space-y-3">
@@ -257,7 +260,10 @@ export function PasswordGenerator() {
                   max={128}
                   step={1}
                   value={[options.length]}
-                  onValueChange={([val]) => setOptions((o) => ({ ...o, length: val }))}
+                  onValueChange={(v) => {
+                    const val = Array.isArray(v) ? v[0] : v;
+                    setOptions((o) => ({ ...o, length: val }));
+                  }}
                 />
               </div>
 
