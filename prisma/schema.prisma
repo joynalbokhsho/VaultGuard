@@ -208,7 +208,7 @@ model Passkey {
   deviceType   String
   backedUp     Boolean
   transports   String?
-  createdAt    DateTime?
+  createdAt    DateTime @default(now())
 
   @@index([userId])
 }

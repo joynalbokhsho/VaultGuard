@@ -20,36 +20,50 @@ function emailTemplate(title: string, bodyHtml: string) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${title}</title>
 </head>
-<body style="margin:0;padding:0;background:#09090f;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#09090f;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#020205;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#020205;padding:60px 20px;">
     <tr>
       <td align="center">
-        <table width="100%" style="max-width:520px;background:#111120;border:1px solid #282840;border-radius:16px;overflow:hidden;">
-
-          <!-- Header -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:540px;background-color:#0b0b12;border:1px solid #1a1a2e;border-radius:24px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.4);">
+          
+          <!-- Glossy Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#7c3aed,#6d28d9);padding:32px;text-align:center;">
-              <div style="display:inline-flex;align-items:center;gap:10px;">
-                <div style="width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:10px;display:inline-block;line-height:40px;text-align:center;font-size:22px;">🔐</div>
-                <span style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">${APP_NAME}</span>
+            <td style="background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);padding:48px 40px;text-align:center;">
+              <div style="display:inline-block;background:rgba(255,255,255,0.12);padding:12px;border-radius:14px;margin-bottom:20px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h2 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;text-shadow:0 2px 4px rgba(0,0,0,0.1);">${APP_NAME}</h2>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding:48px 40px;">
+              <h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#ffffff;line-height:1.2;">${title}</h1>
+              <div style="font-size:16px;line-height:1.6;color:#94a3b8;">
+                ${bodyHtml}
               </div>
             </td>
           </tr>
 
-          <!-- Body -->
+          <!-- Safety Banner -->
           <tr>
-            <td style="padding:36px 32px;">
-              <h1 style="margin:0 0 12px;font-size:20px;font-weight:700;color:#f0eeff;">${title}</h1>
-              ${bodyHtml}
+            <td style="padding:0 40px 48px;">
+              <div style="background-color:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:24px;text-align:center;">
+                <p style="margin:0;font-size:13px;color:#64748b;line-height:1.5;">
+                  <strong>Zero-Knowledge Security</strong><br/>
+                  Your vault is encrypted with your master password before it leaves your device. We can never see your data.
+                </p>
+              </div>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="padding:20px 32px;border-top:1px solid #282840;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#4b4b6b;">
-                🔒 End-to-end encrypted · Your master password never leaves your device<br/>
-                <a href="${APP_URL}" style="color:#7c3aed;text-decoration:none;">${APP_URL}</a>
+            <td style="background-color:#08080f;padding:32px 40px;text-align:center;border-top:1px solid #1a1a2e;">
+              <p style="margin:0;font-size:12px;color:#475569;letter-spacing:0.02em;">
+                © ${new Date().getFullYear()} ${APP_NAME} Systems · All rights reserved.<br/>
+                <a href="${APP_URL}" style="color:#6366f1;text-decoration:none;font-weight:600;display:inline-block;margin-top:8px;">Visit Website</a>
               </p>
             </td>
           </tr>
@@ -98,18 +112,11 @@ export const auth = betterAuth({
         subject: `Reset your ${APP_NAME} password`,
         html: emailTemplate(
           "Reset your password",
-          `<p style="color:#9c99bc;font-size:15px;line-height:1.7;margin:0 0 24px;">
-            We received a request to reset the password for your ${APP_NAME} account.
-            Click the button below to choose a new password.
-           </p>
-           <div style="text-align:center;margin:28px 0;">
-             <a href="${url}" style="display:inline-block;padding:14px 32px;background:#7c3aed;color:#fff;font-weight:600;font-size:15px;border-radius:10px;text-decoration:none;">
-               Reset Password
-             </a>
-           </div>
-           <p style="color:#4b4b6b;font-size:12px;margin:0;">
-             This link expires in 1 hour. If you did not request a password reset, you can safely ignore this email.
-           </p>`
+            `<p style="margin:0 0 24px;">We received a request to reset your ${APP_NAME} account password. Click the button below to secure your vault with a new passphrase.</p>
+             <div style="text-align:center;margin:32px 0;">
+               <a href="${url}" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);color:#ffffff;font-weight:700;font-size:15px;border-radius:12px;text-decoration:none;box-shadow:0 10px 20px rgba(79, 70, 229, 0.2);">Reset Your Password</a>
+             </div>
+             <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this, you can safely ignore this email. The link will expire in 1 hour.</p>`
         ),
       });
     },
@@ -123,17 +130,11 @@ export const auth = betterAuth({
         subject: `Verify your ${APP_NAME} email address`,
         html: emailTemplate(
           "Verify your email",
-          `<p style="color:#9c99bc;font-size:15px;line-height:1.7;margin:0 0 24px;">
-            Thanks for signing up! Please verify your email address to activate your vault.
-           </p>
-           <div style="text-align:center;margin:28px 0;">
-             <a href="${url}" style="display:inline-block;padding:14px 32px;background:#7c3aed;color:#fff;font-weight:600;font-size:15px;border-radius:10px;text-decoration:none;">
-               Verify Email Address
-             </a>
-           </div>
-           <p style="color:#4b4b6b;font-size:12px;margin:0;">
-             If you did not create a ${APP_NAME} account, you can safely ignore this email.
-           </p>`
+            `<p style="margin:0 0 24px;">Thank you for choosing VaultGuard. To finish setting up your account and activate your encrypted storage, please verify your email address below.</p>
+             <div style="text-align:center;margin:32px 0;">
+               <a href="${url}" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);color:#ffffff;font-weight:700;font-size:15px;border-radius:12px;text-decoration:none;box-shadow:0 10px 20px rgba(79, 70, 229, 0.2);">Verify Email Address</a>
+             </div>
+             <p style="margin:0;font-size:13px;color:#475569;">If you did not create a ${APP_NAME} account, you can safely ignore this email.</p>`
         ),
       });
     },
@@ -189,23 +190,20 @@ export const auth = betterAuth({
             subject: `Your ${APP_NAME} 2FA Code`,
             html: emailTemplate(
               "Two-Factor Authentication",
-              `<p style="color:#9c99bc;font-size:15px;line-height:1.7;margin:0 0 24px;">
-                Use the code below to verify your identity. This code will expire in 10 minutes.
-               </p>
-               <div style="text-align:center;margin:32px 0;">
-                 <div style="display:inline-block;padding:16px 40px;background:#111120;border:2px solid #7c3aed;color:#7c3aed;font-size:32px;font-weight:800;letter-spacing:8px;border-radius:12px;">
-                   ${code}
-                 </div>
+              `<p style="margin:0 0 24px;">Use the verification code below to complete your sign-in. For your security, this code will expire in 10 minutes.</p>
+               <div style="text-align:center;margin:40px 0;">
+                 <div style="display:inline-block;padding:20px 48px;background-color:#020205;border:2px solid #4f46e5;color:#ffffff;font-size:36px;font-weight:800;letter-spacing:10px;border-radius:16px;box-shadow:0 0 30px rgba(79, 70, 229, 0.1);">${code}</div>
                </div>
-               <p style="color:#4b4b6b;font-size:12px;margin:0;">
-                 If you did not request this code, someone might be trying to access your account. Please change your password immediately.
-               </p>`
+               <p style="margin:0;font-size:13px;color:#475569;">If you didn't request this code, please secure your account by changing your login password immediately.</p>`
             ),
           });
         },
       },
     }),
-    passkey(),
+    passkey({
+      rpID: process.env.NODE_ENV === "production" ? "vault.diu.my.id" : "localhost",
+      rpName: APP_NAME,
+    }),
   ],
 });
 
