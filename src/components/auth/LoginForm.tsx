@@ -135,7 +135,7 @@ export function LoginForm() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="login-password">Password</Label>
-                    <Link href="/forgot-password" size="sm" className="text-xs text-primary hover:underline font-medium">
+                    <Link href="/forgot-password" className="text-xs text-primary hover:underline font-medium">
                       Forgot password?
                     </Link>
                   </div>
