@@ -39,6 +39,7 @@ model User {
   sessions         Session[]
   accounts         Account[]
   twoFactors       TwoFactor[]
+  passkeys         Passkey[]
 }
 
 model Account {
@@ -193,4 +194,20 @@ model Device {
   
   @@index([userId])
   @@unique([userId, fingerprint])
+}
+
+model Passkey {
+  id           String   @id @default(uuid())
+  name         String?
+  publicKey    String
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime?
+
+  @@index([userId])
 }
