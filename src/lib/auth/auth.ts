@@ -159,6 +159,16 @@ export const auth = betterAuth({
     },
   },
 
+  // --- User Fields ---
+  user: {
+    additionalFields: {
+      twoFactorEmailEnabled: {
+        type: "boolean",
+        defaultValue: false,
+      },
+    },
+  },
+
   // --- Plugins ---
   plugins: [
     twoFactor({
