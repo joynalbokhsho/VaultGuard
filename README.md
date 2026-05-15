@@ -633,7 +633,7 @@ Requirements:
 Contributions are very welcome! Here's how to get started:
 
 1. **Fork** the repository on GitHub
-2. Clone your fork: `git clone https://github.com/your-username/VaultGuard.git`
+2. Clone your fork: `git clone https://github.com/joynalbokhsho/VaultGuard/VaultGuard.git`
 3. Create a feature branch: `git checkout -b feature/your-feature-name`
 4. Make your changes and ensure the build passes: `npm run build`
 5. Commit with a descriptive message: `git commit -m "feat: add your feature"`

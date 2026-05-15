@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { 
-  ShieldCheck, Lock, Shield, Key, Fingerprint, RefreshCcw, 
-  Eye, ArrowRight, CheckCircle, LockKeyhole, StickyNote, 
-  CreditCard, Terminal, IdCard, Globe 
+import {
+  ShieldCheck, Lock, Shield, Key, Fingerprint, RefreshCcw,
+  Eye, ArrowRight, CheckCircle, LockKeyhole, StickyNote,
+  CreditCard, Terminal, IdCard, Globe
 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -14,12 +14,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const features = [
-  { icon: Lock,        title: "Zero-Knowledge Architecture", color: "text-purple-400", bg: "bg-purple-400/10", desc: "Your vault is encrypted in your browser before it ever reaches our servers. We literally cannot read your passwords. Nobody can." },
-  { icon: Shield,      title: "AES-256-GCM Encryption",      color: "text-blue-400", bg: "bg-blue-400/10", desc: "Military-grade encryption standard used by governments and financial institutions. Each entry encrypted individually with a unique IV." },
-  { icon: Key,         title: "PBKDF2 Key Derivation",       color: "text-emerald-400", bg: "bg-emerald-400/10", desc: "Your master password is never sent to our servers. 600,000 iterations of PBKDF2-SHA512 derive your encryption key locally." },
-  { icon: Fingerprint, title: "Passkey / WebAuthn",          color: "text-orange-400", bg: "bg-orange-400/10",  desc: "Login with biometrics or hardware security keys. No passwords needed — the future of authentication, available today." },
-  { icon: RefreshCcw,  title: "2FA & Recovery Codes",        color: "text-pink-400", bg: "bg-pink-400/10", desc: "TOTP two-factor authentication compatible with Google Authenticator, Authy, and more. Encrypted recovery codes for emergencies." },
-  { icon: Eye,         title: "Breach Detection",            color: "text-yellow-400", bg: "bg-yellow-400/10",  desc: "Check if your passwords appear in known data breaches using the HaveIBeenPwned API — securely, with k-anonymity." },
+  { icon: Lock, title: "Zero-Knowledge Architecture", color: "text-purple-400", bg: "bg-purple-400/10", desc: "Your vault is encrypted in your browser before it ever reaches our servers. We literally cannot read your passwords. Nobody can." },
+  { icon: Shield, title: "AES-256-GCM Encryption", color: "text-blue-400", bg: "bg-blue-400/10", desc: "Military-grade encryption standard used by governments and financial institutions. Each entry encrypted individually with a unique IV." },
+  { icon: Key, title: "PBKDF2 Key Derivation", color: "text-emerald-400", bg: "bg-emerald-400/10", desc: "Your master password is never sent to our servers. 600,000 iterations of PBKDF2-SHA512 derive your encryption key locally." },
+  { icon: Fingerprint, title: "Passkey / WebAuthn", color: "text-orange-400", bg: "bg-orange-400/10", desc: "Login with biometrics or hardware security keys. No passwords needed — the future of authentication, available today." },
+  { icon: RefreshCcw, title: "2FA & Recovery Codes", color: "text-pink-400", bg: "bg-pink-400/10", desc: "TOTP two-factor authentication compatible with Google Authenticator, Authy, and more. Encrypted recovery codes for emergencies." },
+  { icon: Eye, title: "Breach Detection", color: "text-yellow-400", bg: "bg-yellow-400/10", desc: "Check if your passwords appear in known data breaches using the HaveIBeenPwned API — securely, with k-anonymity." },
 ];
 
 const vaultTypes = [
@@ -44,7 +44,7 @@ const checks = ["No credit card", "End-to-end encrypted", "Open source", "Free f
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary-foreground">
-      
+
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
@@ -55,14 +55,14 @@ export default function LandingPage() {
             <span className="font-bold text-lg tracking-tight hidden sm:block">VaultGuard</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link 
-              href="/login" 
+            <Link
+              href="/login"
               className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
             >
               Sign in
             </Link>
-            <Link 
-              href="/register" 
+            <Link
+              href="/register"
               className={cn(buttonVariants({ size: "sm" }), "shadow-lg shadow-primary/20")}
             >
               Get started free
@@ -75,11 +75,11 @@ export default function LandingPage() {
       <section className="relative pt-32 pb-20 overflow-hidden">
         {/* Glow effect */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-primary/10 blur-[120px] rounded-full -z-10 pointer-events-none" />
-        
+
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
             <Badge variant="outline" className="mb-8 px-4 py-1.5 border-primary/20 bg-primary/5 text-primary font-medium tracking-wide">
@@ -96,19 +96,19 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
-              VaultGuard uses AES-256-GCM encryption, derived from your master password in your browser. 
+              VaultGuard uses AES-256-GCM encryption, derived from your master password in your browser.
               Your data reaches our servers as unreadable ciphertext — even we cannot decrypt it.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link 
-                href="/register" 
+              <Link
+                href="/register"
                 className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto h-14 px-8 text-base font-bold shadow-xl shadow-primary/20")}
               >
                 Create your free vault <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
-              <Link 
-                href="/login" 
+              <Link
+                href="/login"
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full sm:w-auto h-14 px-8 text-base font-bold bg-background/50 border-border/50")}
               >
                 Access Vault
@@ -134,8 +134,8 @@ export default function LandingPage() {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
             {vaultTypes.map(v => (
-              <motion.div 
-                key={v.label} 
+              <motion.div
+                key={v.label}
                 whileHover={{ y: -4, scale: 1.02 }}
                 className="p-6 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm flex flex-col items-center gap-3 transition-all"
               >
@@ -157,10 +157,10 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {features.map((f, i) => (
-              <motion.div 
-                key={f.title} 
-                initial={{ opacity: 0, y: 20 }} 
-                whileInView={{ opacity: 1, y: 0 }} 
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
@@ -189,10 +189,10 @@ export default function LandingPage() {
 
           <div className="space-y-4">
             {steps.map((s, i) => (
-              <motion.div 
-                key={s.n} 
-                initial={{ opacity: 0, x: -20 }} 
-                whileInView={{ opacity: 1, x: 0 }} 
+              <motion.div
+                key={s.n}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 className="flex flex-col sm:flex-row gap-6 p-6 rounded-2xl border border-border/40 bg-background/50 hover:bg-background transition-colors"
@@ -215,10 +215,10 @@ export default function LandingPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6">Protect your digital identity</h2>
             <p className="text-lg text-muted-foreground mb-10">Free forever. No credit card. Your data stays yours — always.</p>
-            
+
             <div className="flex flex-col items-center gap-8">
-              <Link 
-                href="/register" 
+              <Link
+                href="/register"
                 className={cn(buttonVariants({ size: "lg" }), "h-14 px-10 text-base font-bold shadow-2xl shadow-primary/30")}
               >
                 Get started for free <ArrowRight className="ml-2 w-5 h-5" />
@@ -250,9 +250,9 @@ export default function LandingPage() {
             <span>AES-256-GCM</span>
             <span>Open Source</span>
           </div>
-          <a 
-            href="https://github.com/your-username/vaultguard" 
-            target="_blank" 
+          <a
+            href="https://github.com/joynalbokhsho/VaultGuard"
+            target="_blank"
             rel="noopener noreferrer"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
           >
